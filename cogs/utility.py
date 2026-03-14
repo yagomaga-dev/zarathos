@@ -353,7 +353,20 @@ class Utility(commands.Cog):
         if self.bot.user in message.mentions:
             # Verifica se quem mencionou é o dono do bot
             if await self.bot.is_owner(message.author):
-                await message.reply(f"Olá {message.author.mention}! Em que posso ajudar?")
+                embed = discord.Embed(
+                    title="CENTRAL DE COMANDOS ZARATHOS",
+                    description=(
+                        "Assistente de moderação e controle estabelecido.\n"
+                        "Selecione uma das categorias no menu abaixo para acessar os comandos correspondentes."
+                    ),
+                    color=discord.Color.from_rgb(0, 0, 0)
+                )
+                
+                embed.set_thumbnail(url=self.bot.user.display_avatar.url if self.bot.user.avatar else None)
+                embed.set_footer(text=f"Prefixo configurado: {self.bot.command_prefix}")
+                
+                view = HelpView(self.bot)
+                await message.reply(embed=embed, view=view)
 
     @commands.command(name='remover_emoji', aliases=['del', 'delemoji', 'del_emoji'])
     @commands.has_permissions(manage_emojis=True)
