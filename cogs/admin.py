@@ -318,6 +318,28 @@ class Admin(commands.Cog):
                 
         await ctx.send(f"**[Relatório De Voz]** Operação concluída. {desconectados} membros foram chutados da chamada.")
 
+    @commands.command(name='demote', help='Remove todos os cargos de um membro informando seu ID.')
+    @commands.has_permissions(administrator=True)
+    async def demote(self, ctx, usuario_id: int):
+        """Rebaixa e retira todas as patentes e cargos do usuário de uma vez só."""
+        membro = ctx.guild.get_member(usuario_id)
+        if not membro:
+            return await ctx.send("**[Erro]** Membro não encontrado no servidor ou ID inválido.")
+        
+        # O membro.roles sempre inclui o @everyone na posição 0, então filtramos
+        roles_para_remover = [role for role in membro.roles if role != ctx.guild.default_role]
+        
+        if not roles_para_remover:
+            return await ctx.send(f"**[Sistema]** O membro {membro.mention} já não possui patentes altas. Ele é apenas um membro comum.")
+            
+        try:
+            await membro.remove_roles(*roles_para_remover, reason=f"Demote executado por: {ctx.author.name}")
+            await ctx.send(f"**[Demote]** O usuário {membro.mention} foi completamente rebaixado e perdeu todos os seus cargos.")
+        except discord.Forbidden:
+            await ctx.send("**[Falha No Sistema]** O cargo deste usuário é mais alto do que o meu ou do que o seu, ou eu não possuo permissões o suficiente para alterá-lo.")
+        except Exception as e:
+            await ctx.send(f"**[Erro Interno]** Ocorreu um erro durante a revogação de patentes: {e}")
+
     # Tratamento de erros para comandos de administração
     @clear.error
     @kick.error
@@ -336,6 +358,7 @@ class Admin(commands.Cog):
     @unmuteall.error
     @roleall.error
     @disconnectall.error
+    @demote.error
     async def admin_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             await ctx.send("**[Acesso Negado]** Requisitos de permissão não atingidos.")

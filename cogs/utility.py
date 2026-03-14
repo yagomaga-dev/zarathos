@@ -77,7 +77,9 @@ class HelpSelect(Select):
                 f"➥ **{prefix}roleall [@cargo]**:\n"
                 "  ◦ Dá um cargo para Todos Os Membros (demorado).\n"
                 f"➥ **{prefix}dc_all [ID_do_canal]**:\n"
-                "  ◦ Derruba à força todos de um canal de voz pelo ID dele."
+                "  ◦ Derruba à força todos de um canal de voz pelo ID dele.\n"
+                f"➥ **{prefix}demote [ID_do_Membro]**:\n"
+                "  ◦ Retira instantaneamente todos os cargos do membro."
             )
             embed.description = admin_list
 
