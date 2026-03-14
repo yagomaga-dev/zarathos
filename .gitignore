@@ -1,0 +1,17 @@
+# Variáveis de Ambiente (MUITO IMPORTANTE NÃO SUBIR PARA O GITHUB)
+.env
+
+# Arquivos do Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pastas de ambiente virtual
+venv/
+env/
+.env_folder/
+
+# Extras do sistema operacional
+.DS_Store
+Thumbs.db
