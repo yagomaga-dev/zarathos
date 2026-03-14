@@ -19,7 +19,7 @@ class Logs(commands.Cog):
     async def set_logs(self, ctx, channel: discord.TextChannel):
         """Define o canal de logs do servidor."""
         self.log_channels[ctx.guild.id] = channel.id
-        await ctx.send(f"**[CONFIGURAÇÃO]** Diretório de registros apontado para {channel.mention}.")
+        await ctx.send(f"**[Configuração]** Diretório de registros apontado para {channel.mention}.")
 
     async def send_log(self, guild, embed):
         """Função auxiliar para enviar logs para o canal configurado."""
@@ -37,7 +37,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
         embed = discord.Embed(
-            title="[REGISTRO] - MEMBRO BANIDO",
+            title="[Registro] - Membro Banido",
             description=f"O membro **{user.name}** ({user.id}) teve o acesso revogado globalmente neste servidor.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -56,7 +56,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
         embed = discord.Embed(
-            title="[REGISTRO] - MEMBRO DESBANIDO",
+            title="[Registro] - Membro Desbanido",
             description=f"O membro **{user.name}** ({user.id}) teve seu acesso restaurado.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -81,7 +81,7 @@ class Logs(commands.Cog):
         async for entry in guild.audit_logs(limit=1, action=discord.AuditLogAction.kick):
             if entry.target.id == member.id:
                 embed = discord.Embed(
-                    title="[REGISTRO] - MEMBRO EXPULSO",
+                    title="[Registro] - Membro Expulso",
                     description=f"O membro **{member.name}** ({member.id}) foi removido compulsoriamente.",
                     color=discord.Color.from_rgb(0, 0, 0),
                     timestamp=datetime.datetime.utcnow()
@@ -99,7 +99,7 @@ class Logs(commands.Cog):
             return
             
         embed = discord.Embed(
-            title="[REGISTRO] - MENSAGEM DELETADA",
+            title="[Registro] - Mensagem Deletada",
             description=f"Registro obliterado. Autor originário: {message.author.mention}. Foco: {message.channel.mention}.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -114,7 +114,7 @@ class Logs(commands.Cog):
             return
             
         embed = discord.Embed(
-            title="[REGISTRO] - MENSAGEM ALTERADA",
+            title="[Registro] - Mensagem Alterada",
             description=f"Registro modificado. Autor originário: {before.author.mention}. Foco: {before.channel.mention}.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -128,7 +128,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
         embed = discord.Embed(
-            title="NOVO DIRETÓRIO DETECTADO",
+            title="Novo Diretório Detectado",
             description=f"Um novo canal foi criado no servidor.",
             color=discord.Color.brand_green(),
             timestamp=datetime.datetime.utcnow()
@@ -147,7 +147,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
         embed = discord.Embed(
-            title="DIRETÓRIO OBLITERADO",
+            title="Diretório Obliterado",
             description=f"Um canal foi permanentemente apagado.",
             color=discord.Color.brand_red(),
             timestamp=datetime.datetime.utcnow()
@@ -164,7 +164,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_role_create(self, role):
         embed = discord.Embed(
-            title="[HIERARQUIA] - NOVA PATENTE REGISTRADA",
+            title="[Hierarquia] - Nova Patente Registrada",
             description=f"A patente {role.mention} foi instanciada.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -181,7 +181,7 @@ class Logs(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
         embed = discord.Embed(
-            title="[HIERARQUIA] - PATENTE REVOGADA",
+            title="[Hierarquia] - Patente Revogada",
             description=f"A patente **{role.name}** foi destruída.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()

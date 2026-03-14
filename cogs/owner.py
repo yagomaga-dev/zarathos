@@ -12,9 +12,9 @@ class Owner(commands.Cog):
         """Recarrega um módulo específico (ex: security, admin, utility)."""
         try:
             await self.bot.reload_extension(f'cogs.{extension}')
-            await ctx.send(f"**[SISTEMA]** O módulo `{extension}.py` foi atualizado com sucesso! As novas funções já estão online.")
+            await ctx.send(f"**[Sistema]** O módulo `{extension}.py` foi atualizado com sucesso! As novas funções já estão online.")
         except Exception as e:
-            await ctx.send(f"**[ERRO]** Falha ao recarregar o módulo `{extension}`:\n```py\n{e}\n```")
+            await ctx.send(f"**[Erro]** Falha ao recarregar o módulo `{extension}`:\n```py\n{e}\n```")
 
     @commands.command(name='load', help='Carrega um arquivo novo.')
     @commands.is_owner()
@@ -22,9 +22,9 @@ class Owner(commands.Cog):
         """Carrega um módulo que foi criado depois que o bot iniciou."""
         try:
             await self.bot.load_extension(f'cogs.{extension}')
-            await ctx.send(f"**[SISTEMA]** O novo módulo `{extension}.py` foi detectado e inserido no sistema com sucesso!")
+            await ctx.send(f"**[Sistema]** O novo módulo `{extension}.py` foi detectado e inserido no sistema com sucesso!")
         except Exception as e:
-            await ctx.send(f"**[ERRO]** Falha ao carregar o módulo `{extension}`:\n```py\n{e}\n```")
+            await ctx.send(f"**[Erro]** Falha ao carregar o módulo `{extension}`:\n```py\n{e}\n```")
 
     @commands.command(name='unload', help='Desativa um módulo inteiro.')
     @commands.is_owner()
@@ -32,9 +32,9 @@ class Owner(commands.Cog):
         """Desliga temporiamente um módulo."""
         try:
             await self.bot.unload_extension(f'cogs.{extension}')
-            await ctx.send(f"**[SISTEMA]** O módulo `{extension}.py` foi completamente desativado.")
+            await ctx.send(f"**[Sistema]** O módulo `{extension}.py` foi completamente desativado.")
         except Exception as e:
-            await ctx.send(f"**[ERRO]** Falha ao desativar o módulo `{extension}`:\n```py\n{e}\n```")
+            await ctx.send(f"**[Erro]** Falha ao desativar o módulo `{extension}`:\n```py\n{e}\n```")
 
     @commands.command(name='reloadall', aliases=['rcall'], help='Recarrega TODOS os arquivos da pasta cogs.')
     @commands.is_owner()
@@ -51,7 +51,7 @@ class Owner(commands.Cog):
                 except Exception as e:
                     failed.append(f"{ext}: {type(e).__name__} - {e}")
         
-        msg = f"**[REINICIALIZAÇÃO QUENTE (HOT-RELOAD)]**\n"
+        msg = f"**[Reinicialização Quente (Hot-Reload)]**\n"
         if reloaded:
             msg += f"**Carregados com sucesso:** `{', '.join(reloaded)}`\n"
         if failed:

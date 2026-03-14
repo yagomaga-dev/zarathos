@@ -32,7 +32,7 @@ class HelpSelect(Select):
         prefix = self.bot.command_prefix
 
         if self.values[0] == "admin":
-            embed.title = "[MANUAL] - COMANDOS DE ADMINISTRAÇÃO"
+            embed.title = "[Manual] - Comandos De Administração"
             
             admin_list = (
                 "• `[]` = Obrigatório / `()` = Opcional\n\n"
@@ -58,7 +58,7 @@ class HelpSelect(Select):
                 "  ◦ Remove o último aviso de um usuário.\n"
                 f"➥ **{prefix}warnings [@user]**:\n"
                 "  ◦ Mostra o histórico de avisos de um membro.\n"
-                f"➥ **{prefix}unban [ID] (motivo)**:\n"
+                f"➥ **{prefix}unban [Id] (motivo)**:\n"
                 "  ◦ Desbane um usuário do servidor pelo ID.\n"
                 f"➥ **{prefix}slowmode [segundos]**:\n"
                 "  ◦ Define o tempo de espera no canal atual.\n"
@@ -75,14 +75,14 @@ class HelpSelect(Select):
                 f"➥ **{prefix}unmuteall**:\n"
                 "  ◦ Desmuta todos que estão na sua call atual.\n"
                 f"➥ **{prefix}roleall [@cargo]**:\n"
-                "  ◦ Dá um cargo para TODOS OS MEMBROS (demorado).\n"
+                "  ◦ Dá um cargo para Todos Os Membros (demorado).\n"
                 f"➥ **{prefix}dc_all [ID_do_canal]**:\n"
                 "  ◦ Derruba à força todos de um canal de voz pelo ID dele."
             )
             embed.description = admin_list
 
         elif self.values[0] == "util":
-            embed.title = "[MANUAL] - COMANDOS DE UTILIDADE"
+            embed.title = "[Manual] - Comandos De Utilidade"
             
             util_list = (
                 "• `[]` = Obrigatório / `()` = Opcional\n\n"
@@ -118,7 +118,7 @@ class HelpSelect(Select):
             embed.description = util_list
 
         elif self.values[0] == "security":
-            embed.title = "[MANUAL] - COMANDOS DE SEGURANÇA"
+            embed.title = "[Manual] - Comandos De Segurança"
             
             security_list = (
                 "• `[]` = Obrigatório / `()` = Opcional\n\n"
@@ -149,7 +149,7 @@ class Utility(commands.Cog):
     async def help(self, ctx):
         """Mostra o menu interativo de ajuda."""
         embed = discord.Embed(
-            title="CENTRAL DE COMANDOS ZARATHOS",
+            title="Central De Comandos Zarathos",
             description=(
                 "Assistente de moderação e controle estabelecido.\n"
                 "Selecione uma das categorias no menu abaixo para acessar os comandos correspondentes."
@@ -167,13 +167,13 @@ class Utility(commands.Cog):
     async def ping(self, ctx):
         """Verifica a latência do bot."""
         latency = round(self.bot.latency * 1000)
-        await ctx.send(f"**[STATUS]** Conexão estável. Latência: {latency}ms")
+        await ctx.send(f"**[Status]** Conexão estável. Latência: {latency}ms")
 
     @commands.command(name='avatar')
     async def avatar(self, ctx, member: discord.Member = None):
         """Mostra o avatar de um membro."""
         member = member or ctx.author
-        embed = discord.Embed(title=f"[IMAGEM] - AVATAR: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Imagem] - AVATAR: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
         embed.set_image(url=member.display_avatar.url)
         await ctx.send(embed=embed)
 
@@ -183,7 +183,7 @@ class Utility(commands.Cog):
         member = member or ctx.author
         roles = [role.mention for role in member.roles[1:]] # Exclui o @everyone
         
-        embed = discord.Embed(title=f"[ARQUIVO] - PERFIL: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Arquivo] - PERFIL: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.add_field(name="Tag", value=f"`{member}`", inline=True)
         embed.add_field(name="ID", value=f"`{member.id}`", inline=True)
@@ -197,7 +197,7 @@ class Utility(commands.Cog):
     async def serverinfo(self, ctx):
         """Mostra informações do servidor."""
         guild = ctx.guild
-        embed = discord.Embed(title=f"[ARQUIVO] - DADOS DO SERVIDOR: {guild.name}", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Arquivo] - Dados Do Servidor: {guild.name}", color=discord.Color.from_rgb(0, 0, 0))
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
         
@@ -226,9 +226,9 @@ class Utility(commands.Cog):
         user = await self.bot.fetch_user(member.id)
         
         if not user.banner:
-            return await ctx.send(f"**[AVISO]** O membro {member.name} não possui um banner configurado.")
+            return await ctx.send(f"**[Aviso]** O membro {member.name} não possui um banner configurado.")
             
-        embed = discord.Embed(title=f"[IMAGEM] - BANNER: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Imagem] - BANNER: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
         embed.set_image(url=user.banner.url)
         await ctx.send(embed=embed)
 
@@ -245,7 +245,7 @@ class Utility(commands.Cog):
         uptime_str = f"{days}d {hours}h {minutes}m {seconds}s"
         
         embed = discord.Embed(
-            title="[STATUS] - UPTIME DO SISTEMA",
+            title="[Status] - Uptime Do Sistema",
             description=f"O sistema está operando continuamente por:\n**{uptime_str}**",
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -255,9 +255,9 @@ class Utility(commands.Cog):
     async def servericon(self, ctx):
         """Mostra o ícone do servidor."""
         if not ctx.guild.icon:
-            return await ctx.send("**[AVISO]** Este servidor não possui um ícone configurado.")
+            return await ctx.send("**[Aviso]** Este servidor não possui um ícone configurado.")
             
-        embed = discord.Embed(title=f"[IMAGEM] - ÍCONE DO SERVIDOR", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Imagem] - Ícone Do Servidor", color=discord.Color.from_rgb(0, 0, 0))
         embed.set_image(url=ctx.guild.icon.url)
         await ctx.send(embed=embed)
 
@@ -270,7 +270,7 @@ class Utility(commands.Cog):
         bots = sum(1 for member in guild.members if member.bot)
         humans = total - bots
         
-        embed = discord.Embed(title=f"[ESTATÍSTICAS] - POPULAÇÃO", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Estatísticas] - POPULAÇÃO", color=discord.Color.from_rgb(0, 0, 0))
         embed.add_field(name="Total", value=f"`{total}`", inline=True)
         embed.add_field(name="Humanos", value=f"`{humans}`", inline=True)
         embed.add_field(name="Bots", value=f"`{bots}`", inline=True)
@@ -281,7 +281,7 @@ class Utility(commands.Cog):
     async def poll(self, ctx, *, question):
         """Cria uma votação simples."""
         embed = discord.Embed(
-            title="[VOTAÇÃO] - AVALIAÇÃO DE CONSELHO",
+            title="[Votação] - Avaliação De Conselho",
             description=question,
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -297,8 +297,8 @@ class Utility(commands.Cog):
         invite_link = discord.utils.oauth_url(self.bot.user.id, permissions=discord.Permissions(8))
         
         embed = discord.Embed(
-            title="[CONECTIVIDADE] - LINK DE CONVITE",
-            description=f"Acesso ao protocolo de inclusão do sistema em novos diretórios:\n\n[INICIAR CONEXÃO]({invite_link})",
+            title="[Conectividade] - Link De Convite",
+            description=f"Acesso ao protocolo de inclusão do sistema em novos diretórios:\n\n[Iniciar Conexão]({invite_link})",
             color=discord.Color.from_rgb(0, 0, 0)
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
@@ -311,7 +311,7 @@ class Utility(commands.Cog):
         total_guilds = len(self.bot.guilds)
         latency = round(self.bot.latency * 1000)
         
-        embed = discord.Embed(title="INFORMAÇÕES TÉCNICAS", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title="Informações Técnicas", color=discord.Color.from_rgb(0, 0, 0))
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
         
         embed.add_field(name="Proprietário", value="`Yago`", inline=True) # Você pode ajustar conforme desejar
@@ -337,7 +337,7 @@ class Utility(commands.Cog):
             roles_str = roles_str[:997] + "..."
             
         embed = discord.Embed(
-            title=f"[DADOS] - RELAÇÃO DE CARGOS",
+            title=f"[Dados] - Relação De Cargos",
             description=roles_str,
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -354,7 +354,7 @@ class Utility(commands.Cog):
             # Verifica se quem mencionou é o dono do bot
             if await self.bot.is_owner(message.author):
                 embed = discord.Embed(
-                    title="CENTRAL DE COMANDOS ZARATHOS",
+                    title="Central De Comandos Zarathos",
                     description=(
                         "Assistente de moderação e controle estabelecido.\n"
                         "Selecione uma das categorias no menu abaixo para acessar os comandos correspondentes."
@@ -376,9 +376,9 @@ class Utility(commands.Cog):
             await emoji.delete(reason=f"Comando executado por {ctx.author.name}")
             await ctx.send(f"O emoji `:{emoji.name}:` foi deletado com sucesso do servidor.")
         except discord.Forbidden:
-            await ctx.send("**[ERRO]** O bot não possui permissão para gerenciar/deletar emojis.")
+            await ctx.send("**[Erro]** O bot não possui permissão para gerenciar/deletar emojis.")
         except discord.HTTPException:
-            await ctx.send("**[FALHA INTERNA]** Ocorreu um erro ao tentar deletar o emoji.")
+            await ctx.send("**[Falha Interna]** Ocorreu um erro ao tentar deletar o emoji.")
 
 async def setup(bot):
     await bot.add_cog(Utility(bot))

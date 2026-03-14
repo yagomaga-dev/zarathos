@@ -79,24 +79,24 @@ class Security(commands.Cog):
         if message.author.guild_permissions.manage_messages:
             return
 
-        # --- SISTEMA: FILTRO DE PALAVRAS PROIBIDAS ---
+        # --- SISTEMA: Filtro De Palavras Proibidas ---
         # Converte a mensagem para minúscula para a verificação
         msg_lower = message.content.lower()
         if any(bad_word in msg_lower for bad_word in self.blacklisted_words):
             try:
                 await message.delete()
-                warning = await message.channel.send(f"**[FILTRO AUTOMÁTICO]** {message.author.mention}, sua mensagem continha um termo proibido e foi interceptada.", delete_after=6)
+                warning = await message.channel.send(f"**[Filtro Automático]** {message.author.mention}, sua mensagem continha um termo proibido e foi interceptada.", delete_after=6)
                 return
             except:
                 pass
         # ---------------------------------------------
 
-        # --- SISTEMA: ANTI-LINK (APENAS CONTEÚDO ADULTO) ---
+        # --- SISTEMA: ANTI-LINK (Apenas Conteúdo Adulto) ---
         if self.adult_link_regex.search(message.content):
             if message.channel.id not in self.link_bypass_channels:
                 try:
                     await message.delete()
-                    await message.channel.send(f"**[BLOQUEIO DE NSFW]** {message.author.mention}, o compartilhamento de links de conteúdo adulto é estritamente proibido.", delete_after=5)
+                    await message.channel.send(f"**[Bloqueio De Nsfw]** {message.author.mention}, o compartilhamento de links de conteúdo adulto é estritamente proibido.", delete_after=5)
                     return
                 except:
                     pass
@@ -159,11 +159,11 @@ class Security(commands.Cog):
                 # Procura um canal de logs ou envia no sistema
                 log_channel = discord.utils.get(member.guild.text_channels, name="logs")
                 if log_channel:
-                    await log_channel.send(f"**[ALERTA DE SEGURANÇA]**\nO usuário {member.mention} foi expulso automaticamente devido à entrada massiva de contas (Anti-Raid).")
+                    await log_channel.send(f"**[Alerta De Segurança]**\nO usuário {member.mention} foi expulso automaticamente devido à entrada massiva de contas (Anti-Raid).")
             except:
                 pass
                 
-        # --- SISTEMA: ANTI-ALT (VERIFICADOR DE IDADE DE CONTA) ---
+        # --- SISTEMA: ANTI-ALT (Verificador De Idade De Conta) ---
         # Contas criadas a menos de 7 dias serão colocadas em quarentena (Time Out automático de 1 hora)
         account_age = now.replace(tzinfo=datetime.timezone.utc) - member.created_at
         if account_age.days < 7:
@@ -175,7 +175,7 @@ class Security(commands.Cog):
                 log_channel = discord.utils.get(member.guild.text_channels, name="logs")
                 if log_channel:
                     embed = discord.Embed(
-                        title="[ALERTA] Conta Suspeita Detectada (ANTI-FAKE)",
+                        title="[Alerta] Conta Suspeita Detectada (ANTI-FAKE)",
                         description=f"{member.mention} entrou no servidor, mas a conta foi criada há apenas **{account_age.days} dias**.",
                         color=discord.Color.gold(),
                         timestamp=datetime.datetime.now()
@@ -195,22 +195,22 @@ class Security(commands.Cog):
         if channel.id in self.ignored_channels:
             self.ignored_channels.remove(channel.id)
             self.save_ignored_channels()
-            await ctx.send(f"**[CONFIGURAÇÃO]** O canal {channel.mention} não é mais ignorado pelo módulo anti-spam.")
+            await ctx.send(f"**[Configuração]** O canal {channel.mention} não é mais ignorado pelo módulo anti-spam.")
         else:
             self.ignored_channels.append(channel.id)
             self.save_ignored_channels()
-            await ctx.send(f"**[CONFIGURAÇÃO]** O canal {channel.mention} agora será ignorado pelo módulo anti-spam.")
+            await ctx.send(f"**[Configuração]** O canal {channel.mention} agora será ignorado pelo módulo anti-spam.")
 
     @commands.command(name='list_bypass', help='Lista os canais ignorados pelo anti-spam.')
     @commands.has_permissions(administrator=True)
     async def list_bypass(self, ctx):
         """Lista todos os canais que estão na lista branca do anti-spam."""
         if not self.ignored_channels:
-            return await ctx.send("**[INFORMAÇÃO]** Não há canais configurados como ignorados pelo módulo anti-spam no momento.")
+            return await ctx.send("**[Informação]** Não há canais configurados como ignorados pelo módulo anti-spam no momento.")
         
         channels_mentions = [f"<#{cid}>" for cid in self.ignored_channels]
         embed = discord.Embed(
-            title="[REGISTRO] - CANAIS ISENTOS DE ANTI-SPAM",
+            title="[Registro] - Canais Isentos De Anti-SPAM",
             description="\n".join(channels_mentions),
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -225,11 +225,11 @@ class Security(commands.Cog):
         if channel.id in self.link_bypass_channels:
             self.link_bypass_channels.remove(channel.id)
             self.save_link_bypass_channels()
-            await ctx.send(f"**[CONFIGURAÇÃO]** O canal {channel.mention} não está mais isento do módulo anti-link.")
+            await ctx.send(f"**[Configuração]** O canal {channel.mention} não está mais isento do módulo anti-link.")
         else:
             self.link_bypass_channels.append(channel.id)
             self.save_link_bypass_channels()
-            await ctx.send(f"**[CONFIGURAÇÃO]** O canal {channel.mention} agora está isento do módulo anti-link.")
+            await ctx.send(f"**[Configuração]** O canal {channel.mention} agora está isento do módulo anti-link.")
 
     @commands.Cog.listener()
     async def on_audit_log_entry_create(self, entry: discord.AuditLogEntry):
@@ -285,13 +285,13 @@ class Security(commands.Cog):
                 log_channel = discord.utils.get(guild.text_channels, name="logs")
                 if log_channel:
                     embed = discord.Embed(
-                        title="[ALERTA DE SEGURANÇA MÁXIMA] - ANTI-NUKE",
+                        title="[Alerta De Segurança Máxima] - ANTI-NUKE",
                         description=f"O membro **{user.mention}** ({user.id}) foi banido em caráter de emergência do servidor.",
                         color=discord.Color.brand_red(),
                         timestamp=datetime.datetime.now()
                     )
                     embed.add_field(name="Motivo do Bloqueio", value="Atividades como deletar canais, criar cargos perigosos ou banir muitas pessoas simultaneamente foram detectadas.", inline=False)
-                    await log_channel.send(f"@everyone **[URGENTE] INVASÃO CONTIDA**", embed=embed)
+                    await log_channel.send(f"@everyone **[Urgente] Invasão Contida**", embed=embed)
                     
                 # Limpa a contagem para não inundar o log com várias tentativas de banir
                 self.nuke_track[guild_id][user_id] = []
@@ -305,11 +305,11 @@ class Security(commands.Cog):
         if membro.id in self.nuke_bypassers:
             self.nuke_bypassers.remove(membro.id)
             self.save_nuke_bypassers()
-            await ctx.send(f"**[SEGURANÇA]** O membro {membro.mention} não possui mais o bypass do Anti-Nuke e será monitorado.")
+            await ctx.send(f"**[Segurança]** O membro {membro.mention} não possui mais o bypass do Anti-Nuke e será monitorado.")
         else:
             self.nuke_bypassers.append(membro.id)
             self.save_nuke_bypassers()
-            await ctx.send(f"**[SEGURANÇA PRIVILEGIADA]** O membro {membro.mention} recebeu o bypass. Suas ações agora serão ignoradas pelo Anti-Nuke.")
+            await ctx.send(f"**[Segurança Privilegiada]** O membro {membro.mention} recebeu o bypass. Suas ações agora serão ignoradas pelo Anti-Nuke.")
 
 
     @commands.command(name='list_nuke_bypass', help='Lista usuários livres do Anti-Nuke.')
@@ -317,11 +317,11 @@ class Security(commands.Cog):
     async def list_nuke_bypass(self, ctx):
         """Mostra os usuários na whitelist do anti-nuke."""
         if not self.nuke_bypassers:
-            return await ctx.send("**[INFORMAÇÃO]** Ninguém está na lista de exceções do Anti-Nuke.")
+            return await ctx.send("**[Informação]** Ninguém está na lista de exceções do Anti-Nuke.")
             
         users_mentions = [f"<@{uid}>" for uid in self.nuke_bypassers]
         embed = discord.Embed(
-            title="[REGISTRO] - WHITELIST DO ANTI-NUKE",
+            title="[Registro] - Whitelist Do Anti-NUKE",
             description="\n".join(users_mentions),
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -329,7 +329,7 @@ class Security(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        # --- SISTEMA: DETECTOR DE GHOST PING ---
+        # --- SISTEMA: Detector De Ghost Ping ---
         if message.author.bot or not message.guild:
             return
             
@@ -340,7 +340,7 @@ class Security(commands.Cog):
                 return
 
             embed = discord.Embed(
-                title="[DETECTOR] Ghost Ping",
+                title="[Detector] Ghost Ping",
                 description=f"O membro **{message.author.mention}** mencionou alguém e apagou a mensagem rapidamente para tentar se esconder.",
                 color=discord.Color.dark_magenta(),
                 timestamp=datetime.datetime.now()
@@ -352,11 +352,11 @@ class Security(commands.Cog):
             except:
                 pass
 
-    @commands.command(name='lockdown', help='[CUIDADO] Tranca TODOS os canais do servidor.')
+    @commands.command(name='lockdown', help='[Cuidado] Tranca TODOS os canais do servidor.')
     @commands.has_permissions(administrator=True)
     async def global_lockdown(self, ctx):
         """Bloqueia todos os canais de texto contra membros normais (Protocolo de Pânico)."""
-        await ctx.send("**[INICIANDO PROTOCOLO GLOBAL DE LOCKDOWN]**\nSilenciando o servidor, aguarde...")
+        await ctx.send("**[Iniciando Protocolo Global De Lockdown]**\nSilenciando o servidor, aguarde...")
         locked = 0
         for channel in ctx.guild.text_channels:
             try:
@@ -370,7 +370,7 @@ class Security(commands.Cog):
                 pass
 
         embed = discord.Embed(
-            title="[LOCKDOWN] - GLOBAL ATIVADO",
+            title="[Lockdown] - Global Ativado",
             description=f"O protocolo de emergência foi ativado. **{locked} canais** foram bloqueados.\nNinguém sem cargo de administração poderá enviar mensagens até o aviso prévio.",
             color=discord.Color.brand_red()
         )
@@ -380,7 +380,7 @@ class Security(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def global_unlockdown(self, ctx):
         """Desfaz o protocolo de pânico (Restaura os canais globais)."""
-        await ctx.send("**[DESATIVANDO PROTOCOLO DE LOCKDOWN]**...\nRestaurando acessos.")
+        await ctx.send("**[Desativando Protocolo De Lockdown]**...\nRestaurando acessos.")
         unlocked = 0
         for channel in ctx.guild.text_channels:
             try:
@@ -393,7 +393,7 @@ class Security(commands.Cog):
                 pass
 
         embed = discord.Embed(
-            title="[LOCKDOWN] - GLOBAL ENCERRADO",
+            title="[Lockdown] - Global Encerrado",
             description=f"O servidor está seguro. **{unlocked} canais** foram destrancados e os membros votaram a ter permissão de fala.",
             color=discord.Color.brand_green()
         )

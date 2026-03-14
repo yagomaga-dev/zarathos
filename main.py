@@ -52,7 +52,7 @@ class ZarathosBot(commands.Bot):
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.NotOwner):
-            await ctx.send("**[ERRO]** Você não tem permissão para usar meus comandos. Apenas meu mestre, Yago, pode fazer isso.")
+            await ctx.send("**[Erro]** Você não tem permissão para usar meus comandos. Apenas meu mestre, Yago, pode fazer isso.")
         else:
             # Continua para os tratamentos normais de erros dos Cogs se não for erro de dono
             pass

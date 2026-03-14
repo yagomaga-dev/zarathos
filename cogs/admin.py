@@ -34,7 +34,7 @@ class Admin(commands.Cog):
         """Bane um membro informando o motivo."""
         await member.ban(reason=reason)
         embed = discord.Embed(
-            title="[REGISTRO] - BANIMENTO",
+            title="[Registro] - BANIMENTO",
             description=f"O membro **{member.name}** teve seu acesso revogado permanentemente.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -51,7 +51,7 @@ class Admin(commands.Cog):
         await member.ban(reason=f"IP BAN: {reason or 'Não informado'}", delete_message_days=7)
         
         embed = discord.Embed(
-            title="[REGISTRO] - BANIMENTO GLOBAL (IP)",
+            title="[Registro] - Banimento Global (IP)",
             description=f"O membro **{member.mention}** teve sua conexão e acesso bloqueados.",
             color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.utcnow()
@@ -83,9 +83,9 @@ class Admin(commands.Cog):
         except discord.NotFound:
             await ctx.send("Usuário não encontrado na lista de banidos.")
         except discord.Forbidden:
-            await ctx.send("**[ERRO]** Permissões insuficientes para remover o banimento deste usuário.")
+            await ctx.send("**[Erro]** Permissões insuficientes para remover o banimento deste usuário.")
         except Exception as e:
-            await ctx.send(f"**[ERRO INTERNO]** Falha na operação: {e}")
+            await ctx.send(f"**[Erro Interno]** Falha na operação: {e}")
 
 
     @commands.command(name='timeout', help='Aplica castigo em um membro.')
@@ -113,14 +113,14 @@ class Admin(commands.Cog):
         # Aplicamos o tempo máximo permitido (28 dias) para simular um mute "infinito"
         duration = datetime.timedelta(days=28)
         await member.timeout(duration, reason=reason)
-        await ctx.send(f"**[MUTE]** O membro {member.name} foi silenciado. Motivo: {reason or 'Não informado'}")
+        await ctx.send(f"**[Mute]** O membro {member.name} foi silenciado. Motivo: {reason or 'Não informado'}")
 
     @commands.command(name='unmute', help='Remove o silêncio de um membro.')
     @commands.has_permissions(moderate_members=True)
     async def unmute(self, ctx, member: discord.Member):
         """Remove o silenciamento de um usuário."""
         await member.timeout(None)
-        await ctx.send(f"**[UNMUTE]** O membro {member.name} agora pode falar novamente.")
+        await ctx.send(f"**[Unmute]** O membro {member.name} agora pode falar novamente.")
 
     # Sistema simples de warns em memória (Atenção: reinicia se o bot desligar)
     # Em uma versão futura, usaremos um banco de dados para isso.
@@ -145,7 +145,7 @@ class Admin(commands.Cog):
         })
         
         count = len(self.warns[guild_id][member_id])
-        await ctx.send(f"**[ADVERTÊNCIA]** O membro {member.name} recebeu uma infração. (Total: {count})\nMotivo: {reason or 'Não informado'}")
+        await ctx.send(f"**[Advertência]** O membro {member.name} recebeu uma infração. (Total: {count})\nMotivo: {reason or 'Não informado'}")
 
     @commands.command(name='warnings', help='Mostra os avisos de um membro.')
     async def warnings(self, ctx, member: discord.Member):
@@ -156,7 +156,7 @@ class Admin(commands.Cog):
         if guild_id not in self.warns or member_id not in self.warns[guild_id] or not self.warns[guild_id][member_id]:
             return await ctx.send(f"O membro {member.name} possui histórico limpo.")
             
-        embed = discord.Embed(title=f"[REGISTRO] - INFRAÇÕES: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
+        embed = discord.Embed(title=f"[Registro] - INFRAÇÕES: {member.name}", color=discord.Color.from_rgb(0, 0, 0))
         for i, warn in enumerate(self.warns[guild_id][member_id], 1):
             embed.add_field(
                 name=f"Infração {i}", 
@@ -176,7 +176,7 @@ class Admin(commands.Cog):
             self.warns[guild_id][member_id].pop()
             await ctx.send(f"A última infração de {member.name} foi removida dos registros.")
         else:
-            await ctx.send(f"**[ERRO]** O membro {member.name} não possui infrações registradas.")
+            await ctx.send(f"**[Erro]** O membro {member.name} não possui infrações registradas.")
 
     @commands.command(name='slowmode', help='Define o modo lento do canal.')
     @commands.has_permissions(manage_channels=True)
@@ -184,37 +184,37 @@ class Admin(commands.Cog):
         """Altera o tempo de espera entre mensagens no canal."""
         await ctx.channel.edit(slowmode_delay=seconds)
         if seconds == 0:
-            await ctx.send("**[CONTROLE]** O restritor de velocidade foi desativado neste canal.")
+            await ctx.send("**[Controle]** O restritor de velocidade foi desativado neste canal.")
         else:
-            await ctx.send(f"**[CONTROLE]** O restritor de velocidade foi ativado para {seconds} segundos.")
+            await ctx.send(f"**[Controle]** O restritor de velocidade foi ativado para {seconds} segundos.")
 
     @commands.command(name='lock', help='Tranca o canal para membros.')
     @commands.has_permissions(manage_channels=True)
     async def lock(self, ctx):
         """Impede que membros enviem mensagens no canal."""
         await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=False)
-        await ctx.send("**[SEGURANÇA]** O canal encontra-se sob bloqueio de comunicações (Trancado).")
+        await ctx.send("**[Segurança]** O canal encontra-se sob bloqueio de comunicações (Trancado).")
 
     @commands.command(name='unlock', help='Destranca o canal para membros.')
     @commands.has_permissions(manage_channels=True)
     async def unlock(self, ctx):
         """Permite que membros enviem mensagens no canal novamente."""
         await ctx.channel.set_permissions(ctx.guild.default_role, send_messages=True)
-        await ctx.send("**[SEGURANÇA]** O bloqueio de comunicações foi encerrado (Destrancado).")
+        await ctx.send("**[Segurança]** O bloqueio de comunicações foi encerrado (Destrancado).")
 
-    # --- COMANDOS AVANÇADOS DE SEGURANÇA E ADMINISTRAÇÃO ---
+    # --- Comandos Avançados De Segurança E ADMINISTRAÇÃO ---
     
     @commands.command(name='massban', help='Bane várias pessoas de uma vez pelo ID.')
     @commands.has_permissions(administrator=True)
     async def massban(self, ctx, *members: discord.Member):
         """Bane múltiplos usuários simultaneamente (Requer permissão de Admin)."""
         if not members:
-            return await ctx.send("**[ERRO DE SINTAXE]** Você precisa mencionar ou colocar a ID dos usuários que deseja banir em massa.")
+            return await ctx.send("**[Erro De Sintaxe]** Você precisa mencionar ou colocar a ID dos usuários que deseja banir em massa.")
             
         banned = 0
         failed = 0
         
-        await ctx.send("**[SISTEMA]** Iniciando protocolo de banimento em massa. Aguarde...")
+        await ctx.send("**[Sistema]** Iniciando protocolo de banimento em massa. Aguarde...")
         for member in members:
             try:
                 await member.ban(reason=f"Massban executado por {ctx.author}")
@@ -222,7 +222,7 @@ class Admin(commands.Cog):
             except:
                 failed += 1
                 
-        await ctx.send(f"**[RELATÓRIO DE MASSBAN]**\nSucesso: {banned} banidos.\nFalhas: {failed} não puderam ser banidos.")
+        await ctx.send(f"**[Relatório De Massban]**\nSucesso: {banned} banidos.\nFalhas: {failed} não puderam ser banidos.")
 
     @commands.command(name='nuke', help='Clona e apaga o canal atual, limpando-o por completo.')
     @commands.has_permissions(manage_channels=True)
@@ -236,7 +236,7 @@ class Admin(commands.Cog):
         await channel.delete()
         
         embed = discord.Embed(
-            title="[DIRETÓRIO PURIFICADO]",
+            title="[Diretório Purificado]",
             description="Este canal foi recriado com sucesso. Todo o histórico anterior foi obliterado.",
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -248,7 +248,7 @@ class Admin(commands.Cog):
     async def muteall(self, ctx):
         """Muta o microfone de todos os usuários que estão no mesmo canal de voz que você."""
         if not ctx.author.voice or not ctx.author.voice.channel:
-            return await ctx.send("**[ERRO]** Você precisa estar em um canal de voz para usar isso.")
+            return await ctx.send("**[Erro]** Você precisa estar em um canal de voz para usar isso.")
             
         channel = ctx.author.voice.channel
         muted = 0
@@ -259,14 +259,14 @@ class Admin(commands.Cog):
                     muted += 1
                 except:
                     pass
-        await ctx.send(f"**[CONTROLE DE VOZ]** Foram silenciados {muted} membros no canal {channel.name}.")
+        await ctx.send(f"**[Controle De Voz]** Foram silenciados {muted} membros no canal {channel.name}.")
 
     @commands.command(name='unmuteall', help='Desmuta todos os membros em um canal de voz.')
     @commands.has_permissions(mute_members=True)
     async def unmuteall(self, ctx):
         """Devolve a voz de todos os usuários que estão no mesmo canal de voz que você."""
         if not ctx.author.voice or not ctx.author.voice.channel:
-            return await ctx.send("**[ERRO]** Você precisa estar em um canal de voz para usar isso.")
+            return await ctx.send("**[Erro]** Você precisa estar em um canal de voz para usar isso.")
             
         channel = ctx.author.voice.channel
         unmuted = 0
@@ -277,13 +277,13 @@ class Admin(commands.Cog):
                     unmuted += 1
                 except:
                     pass
-        await ctx.send(f"**[CONTROLE DE VOZ]** A voz foi devolvida para {unmuted} membros no canal {channel.name}.")
+        await ctx.send(f"**[Controle De Voz]** A voz foi devolvida para {unmuted} membros no canal {channel.name}.")
 
     @commands.command(name='roleall', help='Dá um cargo para todos do servidor ao mesmo tempo (CUIDADO!).')
     @commands.has_permissions(administrator=True)
     async def roleall(self, ctx, role: discord.Role):
         """Aplica o cargo especificado em todos os membros humanos do servidor."""
-        await ctx.send(f"**[SISTEMA]** Iniciando distribuição em massa do cargo {role.name}. Isso pode demorar vários minutos.")
+        await ctx.send(f"**[Sistema]** Iniciando distribuição em massa do cargo {role.name}. Isso pode demorar vários minutos.")
         
         success = 0
         for member in ctx.guild.members:
@@ -296,7 +296,7 @@ class Admin(commands.Cog):
                 except:
                     pass
                     
-        await ctx.send(f"**[RELATÓRIO]** A distribuição foi concluída. O cargo foi entregue a {success} membros.")
+        await ctx.send(f"**[Relatório]** A distribuição foi concluída. O cargo foi entregue a {success} membros.")
 
     @commands.command(name='disconnectall', aliases=['dc_all', 'derrubar'], help='Desconecta todos os usuários de um canal de voz.')
     @commands.has_permissions(administrator=True)
@@ -306,7 +306,7 @@ class Admin(commands.Cog):
         if not canal_voz.members:
             return await ctx.send(f"O canal `{canal_voz.name}` já está vazio.")
             
-        await ctx.send(f"**[CONTROLE DE VOZ]** Iniciando a desconexão forçada na sala `{canal_voz.name}`...")
+        await ctx.send(f"**[Controle De Voz]** Iniciando a desconexão forçada na sala `{canal_voz.name}`...")
         
         desconectados = 0
         for member in canal_voz.members:
@@ -316,7 +316,7 @@ class Admin(commands.Cog):
             except:
                 pass
                 
-        await ctx.send(f"**[RELATÓRIO DE VOZ]** Operação concluída. {desconectados} membros foram chutados da chamada.")
+        await ctx.send(f"**[Relatório De Voz]** Operação concluída. {desconectados} membros foram chutados da chamada.")
 
     # Tratamento de erros para comandos de administração
     @clear.error
@@ -338,15 +338,15 @@ class Admin(commands.Cog):
     @disconnectall.error
     async def admin_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
-            await ctx.send("**[ACESSO NEGADO]** Requisitos de permissão não atingidos.")
+            await ctx.send("**[Acesso Negado]** Requisitos de permissão não atingidos.")
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("**[ERRO DE SINTAXE]** Parâmetros ausentes. Consulte as instruções operacionais adequadas.")
+            await ctx.send("**[Erro De Sintaxe]** Parâmetros ausentes. Consulte as instruções operacionais adequadas.")
         elif isinstance(error, (commands.BotMissingPermissions, discord.Forbidden)):
-            await ctx.send("**[FALHA NO SISTEMA]** Nível de permissão operacional insuficiente. Eleve a hierarquia do cargo.")
+            await ctx.send("**[Falha No Sistema]** Nível de permissão operacional insuficiente. Eleve a hierarquia do cargo.")
         elif isinstance(error, commands.CommandInvokeError) and isinstance(error.original, discord.Forbidden):
-            await ctx.send("**[FALHA NO SISTEMA]** Nível de permissão operacional insuficiente. Eleve a hierarquia do cargo.")
+            await ctx.send("**[Falha No Sistema]** Nível de permissão operacional insuficiente. Eleve a hierarquia do cargo.")
         else:
-            await ctx.send(f"**[RELATÓRIO DE FALHA]** Anomalia detectada: {error}")
+            await ctx.send(f"**[Relatório De Falha]** Anomalia detectada: {error}")
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
