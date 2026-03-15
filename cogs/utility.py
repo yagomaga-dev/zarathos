@@ -24,6 +24,11 @@ class HelpSelect(Select):
                 description="Proteção contra spam e ataques", 
                 value="security"
             ),
+            discord.SelectOption(
+                label="Economia", 
+                description="Zarathos Essence (ZE), Loja e VIPs", 
+                value="economy"
+            ),
         ]
         super().__init__(placeholder="Selecione uma categoria...", options=options)
 
@@ -133,7 +138,27 @@ class HelpSelect(Select):
                 f"➥ **{prefix}antilink_bypass (#canal)**:\n"
                 "  ◦ Adiciona ou remove um canal da exceção do bloqueio de links."
             )
-            embed.description = security_list
+        elif self.values[0] == "economy":
+            embed.title = "[Manual] - Sistema De Economia"
+            
+            economy_list = (
+                "• `[]` = Obrigatório / `()` = Opcional\n\n"
+                f"➥ **{prefix}daily**:\n"
+                "  ◦ Coleta sua recompensa diária de Essência.\n"
+                f"➥ **{prefix}work**:\n"
+                "  ◦ Trabalhe para ganhar ZE (1h de cooldown).\n"
+                f"➥ **{prefix}money (@user)**:\n"
+                "  ◦ Mostra o saldo da carteira e banco.\n"
+                f"➥ **{prefix}dep [quantia/all]**:\n"
+                "  ◦ Guarda dinheiro no banco para proteção.\n"
+                f"➥ **{prefix}with [quantia/all]**:\n"
+                "  ◦ Saca dinheiro do banco para a carteira.\n"
+                f"➥ **{prefix}loja**:\n"
+                "  ◦ Abre o mercado de VIPs de Zarathos.\n"
+                f"➥ **{prefix}comprar [ID]**:\n"
+                "  ◦ Adquire um item ou cargo da loja."
+            )
+            embed.description = economy_list
 
         embed.set_thumbnail(url=self.bot.user.display_avatar.url if self.bot.user.avatar else None)
         embed.set_footer(text=f"Comando executado por: {interaction.user}", icon_url=interaction.user.display_avatar.url)
@@ -157,7 +182,7 @@ class Utility(commands.Cog):
             title="Central De Comandos Zarathos",
             description=(
                 "Olá! Sou o Zarathos, seu assistente de segurança e moderação.\n"
-                "Para manter o chat limpo, acabei de enviar o meu **Guia de Comandos detalhado** diretamente na sua DM! 📩\n\n"
+                "Para manter o chat limpo, acabei de enviar o meu **Guia de Comandos detalhado** diretamente na sua DM!\n\n"
                 "Caso sua DM esteja fechada, você ainda pode usar o menu interativo abaixo."
             ),
             color=discord.Color.from_rgb(0, 0, 0)
@@ -166,7 +191,7 @@ class Utility(commands.Cog):
         
         # Embed detalhada para a DM
         embed_dm = discord.Embed(
-            title="📜 Guia de Operações - Zarathos",
+            title="Guia de Operações - Zarathos",
             description="Aqui está a lista completa e detalhada de todos os comandos disponíveis no meu sistema.",
             color=discord.Color.from_rgb(0, 0, 0)
         )
@@ -185,7 +210,7 @@ class Utility(commands.Cog):
             f"**{prefix}nuke** - Apaga o canal atual e recria uma cópia limpa.\n"
             f"**{prefix}slowmode [seg]** - Define um tempo de espera entre mensagens."
         )
-        embed_dm.add_field(name="🛡️ Administração & Moderação", value=admin_cmds, inline=False)
+        embed_dm.add_field(name="Administração & Moderação", value=admin_cmds, inline=False)
         
         # Categoria Utilidades
         util_cmds = (
@@ -196,7 +221,7 @@ class Utility(commands.Cog):
             f"**{prefix}uptime** - Mostra há quanto tempo o bot está operando.\n"
             f"**{prefix}poll [pergunta]** - Inicia uma votação rápida com reações."
         )
-        embed_dm.add_field(name="⚙️ Utilidades Gerais", value=util_cmds, inline=False)
+        embed_dm.add_field(name="Utilidades Gerais", value=util_cmds, inline=False)
         
         # Categoria Segurança
         sec_cmds = (
@@ -204,7 +229,7 @@ class Utility(commands.Cog):
             f"**{prefix}antilink_bypass** - Permite o envio de links em canais específicos.\n"
             f"**{prefix}lockdown** - Bloqueia a escrita em TODO o servidor (Cuidado!)."
         )
-        embed_dm.add_field(name="🔒 Segurança Avançada", value=sec_cmds, inline=False)
+        embed_dm.add_field(name="Segurança Avançada", value=sec_cmds, inline=False)
         
         embed_dm.set_footer(text="Zarathos Security System | Sistema de Defesa Ativo")
 
@@ -216,7 +241,7 @@ class Utility(commands.Cog):
         except discord.Forbidden:
             # Se a DM estiver fechada, avisa e manda o menu normal
             embed_public.description = (
-                "⚠️ **Aviso:** Não consegui enviar o guia detalhado na sua DM (ela parece estar fechada).\n"
+                "Aviso: Não consegui enviar o guia detalhado na sua DM (ela parece estar fechada).\n"
                 "Use o menu interativo abaixo para navegar pelos comandos."
             )
             view = HelpView(self.bot)

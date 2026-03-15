@@ -6,13 +6,26 @@ from dotenv import load_dotenv
 import os
 import pymongo
 
-# Tenta carregar o .env do diretório raiz
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-env_path = os.path.join(base_dir, '.env')
-load_dotenv(dotenv_path=env_path)
+# Tenta carregar o .env do diretório raiz de forma absoluta
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__)) # Pasta cogs
+    root_dir = os.path.dirname(current_dir) # Pasta zarathos
+    env_path = os.path.join(root_dir, '.env')
+    
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path, override=True)
+        print(f"[DEBUG] Arquivo .env encontrado em: {env_path}")
+    else:
+        print(f"[AVISO] Arquivo .env NÃO encontrado em: {env_path}")
+except Exception as e:
+    print(f"[ERRO] Falha ao localizar .env: {e}")
 
 # Configuração do MongoDB
 MONGO_URL = os.getenv("MONGO_URL")
+if MONGO_URL:
+    print(f"[DEBUG] MONGO_URL carregada com sucesso (tamanho: {len(MONGO_URL)} caracteres)")
+else:
+    print("[DEBUG] MONGO_URL continua vindo como None")
 
 class Economy(commands.Cog):
     def __init__(self, bot):
@@ -21,15 +34,20 @@ class Economy(commands.Cog):
         if MONGO_URL:
             try:
                 self.cluster = pymongo.MongoClient(MONGO_URL)
+                # Força uma conexão para testar se a URL é válida
+                self.cluster.admin.command('ping')
                 self.db = self.cluster["zarathos_db"]
                 self.collection = self.db["economy"]
-                print("[SISTEMA] Conectado ao MongoDB com sucesso.")
+                print("[SISTEMA] Conectado ao MongoDB Atlas com sucesso.")
             except Exception as e:
-                print(f"[ERRO] Falha ao conectar ao MongoDB: {e}")
+                print(f"[ERRO] Falha crítica ao conectar ao MongoDB: {e}")
                 self.collection = None
         else:
-            print("[AVISO] MONGO_URL não encontrada no .env. Economia desativada.")
+            print("[AVISO] A variável MONGO_URL está vazia. Verifique seu arquivo .env")
             self.collection = None
+        
+        # Rastreamento de voz na memória
+        self.voice_tracking = {}
 
     def get_user_data(self, user_id):
         """Retorna os dados do usuário ou cria se não existir."""
@@ -44,6 +62,7 @@ class Economy(commands.Cog):
                 "_id": user_id,
                 "balance": 0,
                 "bank": 0,
+                "msg_count": 0,
                 "last_daily": None,
                 "last_work": None
             }
@@ -86,7 +105,7 @@ class Economy(commands.Cog):
         self.collection.update_one({"_id": user_id}, {"$set": {"last_daily": now}})
 
         embed = discord.Embed(
-            title="✨ | Colheita de Essência",
+            title="Colheita de Essência",
             description=f"Você colheu **{reward} ZE** das sombras de Zarathos!",
             color=discord.Color.purple(),
             timestamp=now
@@ -107,13 +126,13 @@ class Economy(commands.Cog):
         total = wallet + bank
 
         embed = discord.Embed(
-            title=f"💰 | Finanças de {member.display_name}",
+            title=f"Finanças de {member.display_name}",
             color=discord.Color.dark_purple(),
             timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
-        embed.add_field(name="👛 Carteira", value=f"`{wallet:,} ZE`", inline=True)
-        embed.add_field(name="🏦 Banco", value=f"`{bank:,} ZE`", inline=True)
-        embed.add_field(name="📊 Total", value=f"`{total:,} ZE`", inline=False)
+        embed.add_field(name="Carteira", value=f"`{wallet:,} ZE`", inline=True)
+        embed.add_field(name="Banco", value=f"`{bank:,} ZE`", inline=True)
+        embed.add_field(name="Total", value=f"`{total:,} ZE`", inline=False)
         embed.set_thumbnail(url=member.display_avatar.url)
         
         await ctx.send(embed=embed)
@@ -153,7 +172,7 @@ class Economy(commands.Cog):
         self.update_balance(user_id, ganho)
         self.collection.update_one({"_id": user_id}, {"$set": {"last_work": now}})
 
-        await ctx.send(f"⚒️ **| {ctx.author.display_name}**, você {trabalho_feito} e recebeu **{ganho} ZE**!")
+        await ctx.send(f"| **{ctx.author.display_name}**, você {trabalho_feito} e recebeu **{ganho} ZE**!")
 
     @commands.command(name="depositar", aliases=["dep"])
     async def deposit(self, ctx, amount):
@@ -180,7 +199,7 @@ class Economy(commands.Cog):
         self.update_balance(ctx.author.id, -amount, "wallet")
         self.update_balance(ctx.author.id, amount, "bank")
 
-        await ctx.send(f"🏦 **|** Você guardou **{amount:,} ZE** no cofre do Banco!")
+        await ctx.send(f"| Você guardou **{amount:,} ZE** no cofre do Banco!")
 
     @commands.command(name="sacar", aliases=["withdraw", "with"])
     async def withdraw(self, ctx, amount):
@@ -207,33 +226,96 @@ class Economy(commands.Cog):
         self.update_balance(ctx.author.id, amount, "wallet")
         self.update_balance(ctx.author.id, -amount, "bank")
 
-        await ctx.send(f"👛 **|** Você sacou **{amount:,} ZE** e agora está na sua carteira!")
+        await ctx.send(f"| Você sacou **{amount:,} ZE** e agora está na sua carteira!")
+
+    @commands.command(name="economy", aliases=["economia", "ajuda_economia"])
+    async def economy_help(self, ctx):
+        """Lista todos os comandos da economia."""
+        prefix = ctx.prefix
+        embed = discord.Embed(
+            title="Guia de Economia - Deep Sea",
+            description=(
+                f"Aqui estão os comandos para gerenciar suas conquistas:\n\n"
+                f"• `{prefix}daily` - Coleta sua recompensa diária.\n"
+                f"• `{prefix}work` - Trabalhe para ganhar Essência.\n"
+                f"• `{prefix}money (@user)` - Veja seu saldo atual.\n"
+                f"• `{prefix}dep [valor/all]` - Guarda moedas no banco.\n"
+                f"• `{prefix}with [valor/all]` - Saca moedas do banco.\n"
+                f"• `{prefix}loja` - Abre o mercado de VIPs.\n"
+                f"• `{prefix}comprar [id]` - Adquire um cargo VIP."
+            ),
+            color=discord.Color.from_rgb(0, 0, 0)
+        )
+        embed.set_footer(text="Use os comandos com sabedoria, explorador.")
+        await ctx.send(embed=embed)
 
     @commands.command(name="loja", aliases=["shop", "store"])
     async def shop(self, ctx):
         """Exibe os itens e cargos disponíveis para compra."""
         embed = discord.Embed(
-            title="🛒 | Mercado das Sombras - Zarathos",
-            description="Use `!comprar <ID>` para adquirir um item.",
-            color=discord.Color.gold(),
+            title="Mercado das Profundezas - Deep Sea",
+            description=(
+                "Quer se destacar no servidor com um cargo exclusivo e vantagens especiais? "
+                "Você pode se tornar VIP utilizando sua **Essência de Zarathos (ZE)**.\n\n"
+                "*Lembre-se: não realizamos reembolso e, caso saia do servidor, será necessário adquirir o VIP novamente.*\n"
+                "Use `z.comprar <ID>` para adquirir."
+            ),
+            color=discord.Color.from_rgb(0, 0, 0),
             timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
         
-        # Aqui você define seus VIPs
-        vips = [
-            {"id": "1", "nome": "VIP Místico", "preco": 50000, "desc": "Tag exclusiva + Cor no nome"},
-            {"id": "2", "nome": "VIP Soberano", "preco": 150000, "desc": "Permissão para mudar nick + Chat privado"},
-            {"id": "3", "nome": "Lenda de Zarathos", "preco": 500000, "desc": "Cargo no topo + Canal de voz próprio"}
-        ]
+        # VIP 1 - SURFACE
+        embed.add_field(
+            name="1 - VIP Surface",
+            value=(
+                "Preço: `25,000 ZE`\n"
+                "Duração: `30 dias`\n"
+                "**Benefícios:**\n"
+                "└ Cargo exclusivo @Vip Surface\n"
+                "└ Alterar o próprio nick\n"
+                "└ Enviar imagens em canais restritos\n"
+                "└ Emojis externos e sorteios VIP\n"
+                "*Representa aqueles que começam a explorar o oceano.*"
+            ),
+            inline=False
+        )
 
-        for vip in vips:
-            embed.add_field(
-                name=f"ID: {vip['id']} - {vip['nome']}",
-                value=f"💰 Preço: `{vip['preco']:,} ZE`\n📜 {vip['desc']}",
-                inline=False
-            )
+        # VIP 2 - KRAKEN
+        embed.add_field(
+            name="2 - VIP Kraken",
+            value=(
+                "Preço: `45,000 ZE`\n"
+                "Duração: `40 dias`\n"
+                "**Benefícios:**\n"
+                "└ Tudo do nível anterior\n"
+                "└ Cargo @Vip Kraken com destaque\n"
+                "└ Criar 1 cargo personalizado\n"
+                "└ Enviar áudios e efeitos sonoros\n"
+                "└ Prioridade no atendimento\n"
+                "*Membros poderosos que dominam as profundezas.*"
+            ),
+            inline=False
+        )
+
+        # VIP 3 - LEVIATHAN
+        embed.add_field(
+            name="3 - VIP Leviathan",
+            value=(
+                "Preço: `80,000 ZE`\n"
+                "Duração: `50 dias`\n"
+                "**Benefícios:**\n"
+                "└ Tudo dos níveis anteriores\n"
+                "└ Cargo @Vip Leviathan (Máximo Destaque)\n"
+                "└ Acesso à Área VIP Exclusiva\n"
+                "└ Adicionar 2 emojis/figurinhas\n"
+                "└ Direito a 1 Mini VIP / Primeira Dama\n"
+                "└ Acesso antecipado a eventos\n"
+                "*Os membros mais lendários das profundezas.*"
+            ),
+            inline=False
+        )
         
-        embed.set_footer(text="Economia Zarathos - Render & MongoDB")
+        embed.set_footer(text="Deep Sea Economy • Zarathos", icon_url=self.bot.user.display_avatar.url)
         await ctx.send(embed=embed)
 
     @commands.command(name="comprar", aliases=["buy"])
@@ -241,32 +323,31 @@ class Economy(commands.Cog):
         """Compra um cargo VIP da loja."""
         if self.collection is None: return
 
-        # Lista de itens (deve ser a mesma da loja)
+        # A lista precisa estar aqui dentro para o reload funcionar
         vips = {
-            "1": {"nome": "VIP Místico", "preco": 50000},
-            "2": {"nome": "VIP Soberano", "preco": 150000},
-            "3": {"nome": "Lenda de Zarathos", "preco": 500000}
+            "1": {"nome": "Vip Surface", "preco": 25000},
+            "2": {"nome": "Vip Kraken", "preco": 45000},
+            "3": {"nome": "Vip Leviathan", "preco": 80000}
         }
 
         if item_id not in vips:
-            return await ctx.send("**[Erro]** ID de item inválido. Use `!loja` para ver os códigos.")
+            return await ctx.send("**[Erro]** ID inválido. Use `z.loja` para ver os códigos.")
 
         item = vips[item_id]
         user_data = self.get_user_data(ctx.author.id)
-        
-        # Verifica se tem dinheiro na carteira ou banco
-        saldo_total = user_data["balance"] + user_data["bank"]
+        saldo_total = user_data.get("balance", 0) + user_data.get("bank", 0)
         
         if saldo_total < item["preco"]:
             faltam = item["preco"] - saldo_total
-            return await ctx.send(f"**[Pobreza]** Você não tem Essência suficiente. Faltam `{faltam:,} ZE`.")
+            return await ctx.send(f"**[Saldo Insuficiente]** Você precisa de mais `{faltam:,} ZE` para este VIP.")
 
-        # Tenta tirar da carteira primeiro, depois do banco
-        if user_data["balance"] >= item["preco"]:
+        # Processamento do pagamento
+        current_wallet = user_data.get("balance", 0)
+        if current_wallet >= item["preco"]:
             self.update_balance(ctx.author.id, -item["preco"], "wallet")
         else:
-            sobra = item["preco"] - user_data["balance"]
-            self.update_balance(ctx.author.id, -user_data["balance"], "wallet")
+            sobra = item["preco"] - current_wallet
+            self.update_balance(ctx.author.id, -current_wallet, "wallet")
             self.update_balance(ctx.author.id, -sobra, "bank")
 
         # Entrega do cargo
@@ -275,14 +356,84 @@ class Economy(commands.Cog):
         if role:
             try:
                 await ctx.author.add_roles(role)
-                msg_sucesso = f"🎉 **| Sucesso!** Você adquiriu o cargo **{item['nome']}**."
+                msg = f"| Sucesso! Você agora é um **{item['nome']}**. Bem-vindo às profundezas!"
             except discord.Forbidden:
-                msg_sucesso = f"✅ **| Compra realizada!** Mas eu não tenho permissão para te dar o cargo `{item['nome']}`. Fale com um admin."
+                msg = f"| Pagamento aceito! Mas estou sem permissão para te dar o cargo `{item['nome']}`. Chame um staff."
         else:
-            msg_sucesso = f"✅ **| Compra realizada!** Porém, o cargo `{item['nome']}` não existe neste servidor. Contate os administradores."
+            msg = f"| Pagamento aceito! O cargo `{item['nome']}` não foi encontrado no servidor. Chame um staff."
 
-        await ctx.send(msg_sucesso)
-        print(f"[ECONOMIA] {ctx.author} comprou {item['nome']}")
+        await ctx.send(msg)
+        print(f"[ECONOMIA] {ctx.author} adquiriu {item['nome']}")
+
+    # --- Listeners de Atividade ---
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Recompensa por mensagens enviadas."""
+        if message.author.bot or not message.guild or self.collection is None:
+            return
+
+        user_id = str(message.author.id)
+        # Ganho base: 5 ZE por mensagem
+        reward = 5
+        
+        # Incrementa o contador e saldo
+        self.collection.update_one(
+            {"_id": user_id}, 
+            {
+                "$inc": {"balance": reward, "msg_count": 1},
+                "$setOnInsert": {"bank": 0, "last_daily": None, "last_work": None}
+            },
+            upsert=True
+        )
+
+        # Checa meta de 1.000 mensagens
+        user_data = self.get_user_data(user_id)
+        if user_data.get("msg_count", 0) >= 1000:
+            bonus = 3500
+            self.update_balance(user_id, bonus)
+            self.collection.update_one({"_id": user_id}, {"$set": {"msg_count": 0}})
+            
+            try:
+                await message.channel.send(f"| PARABÉNS {message.author.mention}! Você atingiu **1.000 mensagens** e recebeu um bônus de **{bonus:,} ZE**!")
+            except:
+                pass
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        """Recompensa por tempo em call."""
+        if member.bot or self.collection is None:
+            return
+
+        user_id = member.id
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        # Entrou em uma call (ou mudou de canal)
+        if after.channel is not None and before.channel is None:
+            # Ignora canais AFK se houver
+            if not after.afk:
+                self.voice_tracking[user_id] = now
+
+        # Saiu da call
+        elif after.channel is None and before.channel is not None:
+            if user_id in self.voice_tracking:
+                join_time = self.voice_tracking.pop(user_id)
+                duration = now - join_time
+                total_seconds = duration.total_seconds()
+                
+                # Cálculo exato: 3500 ZE por 3600 segundos (1 hora)
+                if total_seconds >= 60: # Mínimo de 1 minuto para ganhar algo
+                    total_reward = int((total_seconds / 3600) * 3500)
+                    minutes = int(total_seconds // 60)
+                    
+                    if total_reward > 0:
+                        self.update_balance(user_id, total_reward)
+                        
+                        try:
+                            # Mensagem sem emojis e com valor exato
+                            await member.send(f"| Atividade em Voice: Você passou `{minutes}` minutos em call e recebeu **{total_reward:,} ZE**!")
+                        except:
+                            pass
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))

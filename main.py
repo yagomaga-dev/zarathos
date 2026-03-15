@@ -48,18 +48,6 @@ class ZarathosBot(commands.Bot):
                 except Exception as e:
                     print(f'Falha ao carregar módulo {filename}: {e}')
 
-        # Adiciona verificação global para que apenas o dono do bot consiga usar os comandos
-        @self.check
-        async def globally_block_non_owner(ctx):
-            return await self.is_owner(ctx.author)
-
-    async def on_command_error(self, ctx, error):
-        if isinstance(error, commands.NotOwner):
-            await ctx.send("**[Erro]** Acesso negado. Apenas o verdadeiro proprietário (owner) do bot pode executar esses comandos.")
-        else:
-            # Continua para os tratamentos normais de erros dos Cogs se não for erro de dono
-            pass
-
     async def on_ready(self):
         print("-------")
         print(f'Bot conectado como: {self.user.name}')

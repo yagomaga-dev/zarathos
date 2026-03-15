@@ -51,11 +51,11 @@ class Owner(commands.Cog):
                 except Exception as e:
                     failed.append(f"{ext}: {type(e).__name__} - {e}")
         
-        msg = f"**[Reinicialização Quente (Hot-Reload)]**\n"
+        msg = f"**[Sistema]**\n"
         if reloaded:
-            msg += f"**Carregados com sucesso:** `{', '.join(reloaded)}`\n"
+            msg += f"Módulos atualizados: `{', '.join(reloaded)}`\n"
         if failed:
-            msg += f"**Falhas Críticas:**\n```py\n{chr(10).join(failed)}\n```"
+            msg += f"Falhas detectadas:\n```py\n{chr(10).join(failed)}\n```"
             
         await ctx.send(msg)
 
