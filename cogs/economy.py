@@ -247,9 +247,6 @@ class Economy(commands.Cog):
         embed = discord.Embed(
             title="Mercado das Profundezas - Zarathos",
             description=(
-                "**Vips a venda:** `3 vips`\n"
-                "**Cargos a venda:** `0 cargos`\n"
-                "**Gifts a venda:** `0 gifts`\n\n"
                 "Selecione uma opção no seletor para continuar! Você poderá visualizar os benefícios antes de confirmar a compra."
             ),
             color=discord.Color.from_rgb(20, 20, 20)
