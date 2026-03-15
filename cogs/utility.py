@@ -79,7 +79,9 @@ class HelpSelect(Select):
                 f"➥ **{prefix}dc_all [ID_do_canal]**:\n"
                 "  ◦ Derruba à força todos de um canal de voz pelo ID dele.\n"
                 f"➥ **{prefix}demote [ID_do_Membro]**:\n"
-                "  ◦ Retira instantaneamente todos os cargos do membro."
+                "  ◦ Retira instantaneamente todos os cargos do membro.\n"
+                f"➥ **{prefix}promote [@Membro] [@Cargo]**:\n"
+                "  ◦ Concede um cargo específico de forma forçada."
             )
             embed.description = admin_list
 

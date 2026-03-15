@@ -340,6 +340,21 @@ class Admin(commands.Cog):
         except Exception as e:
             await ctx.send(f"**[Erro Interno]** Ocorreu um erro durante a revogação de patentes: {e}")
 
+    @commands.command(name='promote', help='Chester: Concede um cargo especificado a um membro.')
+    @commands.has_permissions(administrator=True)
+    async def promote(self, ctx, membro: discord.Member, cargo: discord.Role):
+        """Concede um cargo específico a um usuário de forma forçada."""
+        if cargo in membro.roles:
+            return await ctx.send(f"**[Aviso]** O usuário {membro.mention} já possui o cargo {cargo.name}.")
+            
+        try:
+            await membro.add_roles(cargo, reason=f"Promote executado por: {ctx.author.name}")
+            await ctx.send(f"**[Promote]** O usuário {membro.mention} foi promovido ao cargo **{cargo.name}**.")
+        except discord.Forbidden:
+            await ctx.send("**[Falha No Sistema]** Não tenho permissões ou o cargo selecionado está acima do meu nível hierárquico na configuração do Discord.")
+        except Exception as e:
+            await ctx.send(f"**[Erro Interno]** Erro inesperado ao tentar promover o membro: {e}")
+
     # Tratamento de erros para comandos de administração
     @clear.error
     @kick.error
@@ -359,6 +374,7 @@ class Admin(commands.Cog):
     @roleall.error
     @disconnectall.error
     @demote.error
+    @promote.error
     async def admin_error(self, ctx, error):
         if isinstance(error, commands.MissingPermissions):
             await ctx.send("**[Acesso Negado]** Requisitos de permissão não atingidos.")
