@@ -146,6 +146,19 @@ class Admin(commands.Cog):
         
         count = len(self.warns[guild_id][member_id])
         await ctx.send(f"**[Advertência]** O membro {member.name} recebeu uma infração. (Total: {count})\nMotivo: {reason or 'Não informado'}")
+        
+        # Enviar DM para o usuário
+        try:
+            embed_dm = discord.Embed(
+                title=f"Aviso recebido no servidor {ctx.guild.name}",
+                description=f"Você recebeu uma infração de **{ctx.author.name}**.",
+                color=discord.Color.red()
+            )
+            embed_dm.add_field(name="Motivo", value=reason or "Não informado", inline=False)
+            embed_dm.set_footer(text=f"Total de advertências: {count}")
+            await member.send(embed=embed_dm)
+        except discord.Forbidden:
+            await ctx.send(f"*(Aviso: as mensagens diretas de {member.mention} estão desativadas, DM não enviada.)*")
 
     @commands.command(name='warnings', help='Mostra os avisos de um membro.')
     async def warnings(self, ctx, member: discord.Member):

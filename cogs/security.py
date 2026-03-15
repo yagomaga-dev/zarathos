@@ -164,13 +164,13 @@ class Security(commands.Cog):
                 pass
                 
         # --- SISTEMA: ANTI-ALT (Verificador De Idade De Conta) ---
-        # Contas criadas a menos de 7 dias serão colocadas em quarentena (Time Out automático de 1 hora)
+        # Contas criadas a menos de 1 dia serão colocadas em quarentena (Time Out automático de 1 hora)
         account_age = now.replace(tzinfo=datetime.timezone.utc) - member.created_at
-        if account_age.days < 7:
+        if account_age.days < 1:
             try:
                 # Coloca de castigo por 1 hora
                 duration = datetime.timedelta(hours=1)
-                await member.timeout(duration, reason="Segurança: Conta criada a menos de 7 dias (Possível Fake/Bot).")
+                await member.timeout(duration, reason="Segurança: Conta criada a menos de 1 dia (Possível Fake/Bot).")
                 
                 log_channel = discord.utils.get(member.guild.text_channels, name="logs")
                 if log_channel:

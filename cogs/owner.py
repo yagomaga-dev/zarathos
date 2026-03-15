@@ -40,11 +40,11 @@ class Owner(commands.Cog):
     @commands.is_owner()
     async def reloadall(self, ctx):
         """Atualiza todo o sistema do bot pegando todas as edições feitas de uma vez."""
-        reloaded = []
-        failed = []
+        reloaded: list[str] = []
+        failed: list[str] = []
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
-                ext = filename[:-3]
+                ext = filename.replace('.py', '')
                 try:
                     await self.bot.reload_extension(f'cogs.{ext}')
                     reloaded.append(ext)

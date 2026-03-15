@@ -1,12 +1,28 @@
 import discord
 from discord.ext import commands
 import datetime
+import json
+import os
+
+LOGS_FILE = "logs_config.json"
 
 class Logs(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Canal de logs por servidor (Em uma versão futura, usar DB)
-        self.log_channels = {}
+        # Canal de logs por servidor
+        self.log_channels: dict[str, int] = self.load_configs()
+
+    def load_configs(self) -> dict[str, int]:
+        if os.path.exists(LOGS_FILE):
+            with open(LOGS_FILE, "r") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+        return {}
+
+    def save_configs(self):
+        with open(LOGS_FILE, "w") as f:
+            json.dump(self.log_channels, f, indent=4)
 
     @commands.group(name='logs', invoke_without_command=True)
     @commands.has_permissions(administrator=True)
@@ -18,16 +34,20 @@ class Logs(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def set_logs(self, ctx, channel: discord.TextChannel):
         """Define o canal de logs do servidor."""
-        self.log_channels[ctx.guild.id] = channel.id
+        self.log_channels[str(ctx.guild.id)] = channel.id
+        self.save_configs()
         await ctx.send(f"**[Configuração]** Diretório de registros apontado para {channel.mention}.")
 
     async def send_log(self, guild, embed):
         """Função auxiliar para enviar logs para o canal configurado."""
-        channel_id = self.log_channels.get(guild.id)
+        channel_id = self.log_channels.get(str(guild.id))
         if channel_id:
-            channel = self.bot.get_channel(channel_id)
+            channel = self.bot.get_channel(int(channel_id))
             if channel:
-                await channel.send(embed=embed)
+                try:
+                    await channel.send(embed=embed)
+                except discord.Forbidden:
+                    pass
 
     # Evento: Membro Banido
     @commands.Cog.listener()

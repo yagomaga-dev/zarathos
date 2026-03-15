@@ -40,7 +40,8 @@ class ZarathosBot(commands.Bot):
         for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
                 try:
-                    await self.load_extension(f'cogs.{filename[:-3]}')
+                    ext = filename.replace('.py', '')
+                    await self.load_extension(f'cogs.{ext}')
                     print(f'Módulo {filename} carregado com sucesso.')
                 except Exception as e:
                     print(f'Falha ao carregar módulo {filename}: {e}')
