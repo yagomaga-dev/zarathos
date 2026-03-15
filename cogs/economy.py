@@ -6,53 +6,47 @@ from dotenv import load_dotenv
 import os
 import pymongo
 
-# Tenta carregar o .env do diretório raiz de forma absoluta
-try:
-    current_dir = os.path.dirname(os.path.abspath(__file__)) # Pasta cogs
-    root_dir = os.path.dirname(current_dir) # Pasta zarathos
-    env_path = os.path.join(root_dir, '.env')
-    
-    if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path, override=True)
-        print(f"[DEBUG] Arquivo .env encontrado em: {env_path}")
-    else:
-        print(f"[AVISO] Arquivo .env NÃO encontrado em: {env_path}")
-except Exception as e:
-    print(f"[ERRO] Falha ao localizar .env: {e}")
-
-# Configuração do MongoDB
-MONGO_URL = os.getenv("MONGO_URL")
-if MONGO_URL:
-    print(f"[DEBUG] MONGO_URL carregada com sucesso (tamanho: {len(MONGO_URL)} caracteres)")
-else:
-    print("[DEBUG] MONGO_URL continua vindo como None")
+# Tentativa de carregar o .env para ambientes locais
+load_dotenv()
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        # Conexão com o banco de dados
-        if MONGO_URL:
-            try:
-                self.cluster = pymongo.MongoClient(MONGO_URL)
-                # Força uma conexão para testar se a URL é válida
-                self.cluster.admin.command('ping')
-                self.db = self.cluster["zarathos_db"]
-                self.collection = self.db["economy"]
-                print("[SISTEMA] Conectado ao MongoDB Atlas com sucesso.")
-            except Exception as e:
-                print(f"[ERRO] Falha crítica ao conectar ao MongoDB: {e}")
-                self.collection = None
-        else:
-            print("[AVISO] A variável MONGO_URL está vazia. Verifique seu arquivo .env")
-            self.collection = None
+        self.collection = None
+        self.error_msg = None
+        self.connect_db()
         
         # Rastreamento de voz na memória
         self.voice_tracking = {}
 
+    def connect_db(self):
+        """Tenta estabelecer conexão com o MongoDB."""
+        url = os.getenv("MONGO_URL")
+        if not url:
+            self.error_msg = "A variável 'MONGO_URL' não foi encontrada nas configurações (Environment Variables)."
+            self.collection = None
+            return
+
+        try:
+            cluster = pymongo.MongoClient(url, serverSelectionTimeoutMS=5000)
+            # Testa a conexão
+            cluster.admin.command('ping')
+            db = cluster["zarathos_db"]
+            self.collection = db["economy"]
+            self.error_msg = None
+            print("[SISTEMA] Conectado ao MongoDB Atlas com sucesso.")
+        except Exception as e:
+            self.error_msg = f"Falha ao conectar ao banco de dados: {str(e)}"
+            self.collection = None
+            print(f"[ERRO] {self.error_msg}")
+
     def get_user_data(self, user_id):
         """Retorna os dados do usuário ou cria se não existir."""
         if self.collection is None:
-            return None
+            # Tenta reconectar uma vez se estiver nulo
+            self.connect_db()
+            if self.collection is None:
+                return None
             
         user_id = str(user_id)
         data = self.collection.find_one({"_id": user_id})
@@ -81,7 +75,9 @@ class Economy(commands.Cog):
     async def daily(self, ctx):
         """Recompensa diária de Essência."""
         if self.collection is None:
-            return await ctx.send("**[Erro]** O sistema de economia não está configurado corretamente (falta MONGO_URL).")
+            self.connect_db()
+            if self.collection is None:
+                return await ctx.send(f"**[Falha no Sistema]**\nO sistema de economia está offline.\nMotivo: `{self.error_msg}`")
 
         user_id = str(ctx.author.id)
         user_data = self.get_user_data(user_id)
