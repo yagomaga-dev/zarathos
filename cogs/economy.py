@@ -193,7 +193,7 @@ class Economy(commands.Cog):
             try:
                 amount = int(amount)
             except ValueError:
-                return await ctx.send("**[Erro]** Informe um valor numérico válido ou `all`.")
+                return await ctx.send("**[Erro]** Valor inválido.")
 
         if amount <= 0:
             return await ctx.send("**[Erro]** Valor inválido.")
@@ -205,6 +205,81 @@ class Economy(commands.Cog):
         self.update_balance(ctx.author.id, -amount, "bank")
 
         await ctx.send(f"👛 **|** Você sacou **{amount:,} ZE** e agora está na sua carteira!")
+
+    @commands.command(name="loja", aliases=["shop", "store"])
+    async def shop(self, ctx):
+        """Exibe os itens e cargos disponíveis para compra."""
+        embed = discord.Embed(
+            title="🛒 | Mercado das Sombras - Zarathos",
+            description="Use `!comprar <ID>` para adquirir um item.",
+            color=discord.Color.gold(),
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        # Aqui você define seus VIPs
+        vips = [
+            {"id": "1", "nome": "VIP Místico", "preco": 50000, "desc": "Tag exclusiva + Cor no nome"},
+            {"id": "2", "nome": "VIP Soberano", "preco": 150000, "desc": "Permissão para mudar nick + Chat privado"},
+            {"id": "3", "nome": "Lenda de Zarathos", "preco": 500000, "desc": "Cargo no topo + Canal de voz próprio"}
+        ]
+
+        for vip in vips:
+            embed.add_field(
+                name=f"ID: {vip['id']} - {vip['nome']}",
+                value=f"💰 Preço: `{vip['preco']:,} ZE`\n📜 {vip['desc']}",
+                inline=False
+            )
+        
+        embed.set_footer(text="Economia Zarathos - Render & MongoDB")
+        await ctx.send(embed=embed)
+
+    @commands.command(name="comprar", aliases=["buy"])
+    async def buy(self, ctx, item_id: str):
+        """Compra um cargo VIP da loja."""
+        if self.collection is None: return
+
+        # Lista de itens (deve ser a mesma da loja)
+        vips = {
+            "1": {"nome": "VIP Místico", "preco": 50000},
+            "2": {"nome": "VIP Soberano", "preco": 150000},
+            "3": {"nome": "Lenda de Zarathos", "preco": 500000}
+        }
+
+        if item_id not in vips:
+            return await ctx.send("**[Erro]** ID de item inválido. Use `!loja` para ver os códigos.")
+
+        item = vips[item_id]
+        user_data = self.get_user_data(ctx.author.id)
+        
+        # Verifica se tem dinheiro na carteira ou banco
+        saldo_total = user_data["balance"] + user_data["bank"]
+        
+        if saldo_total < item["preco"]:
+            faltam = item["preco"] - saldo_total
+            return await ctx.send(f"**[Pobreza]** Você não tem Essência suficiente. Faltam `{faltam:,} ZE`.")
+
+        # Tenta tirar da carteira primeiro, depois do banco
+        if user_data["balance"] >= item["preco"]:
+            self.update_balance(ctx.author.id, -item["preco"], "wallet")
+        else:
+            sobra = item["preco"] - user_data["balance"]
+            self.update_balance(ctx.author.id, -user_data["balance"], "wallet")
+            self.update_balance(ctx.author.id, -sobra, "bank")
+
+        # Entrega do cargo
+        role = discord.utils.get(ctx.guild.roles, name=item["nome"])
+        
+        if role:
+            try:
+                await ctx.author.add_roles(role)
+                msg_sucesso = f"🎉 **| Sucesso!** Você adquiriu o cargo **{item['nome']}**."
+            except discord.Forbidden:
+                msg_sucesso = f"✅ **| Compra realizada!** Mas eu não tenho permissão para te dar o cargo `{item['nome']}`. Fale com um admin."
+        else:
+            msg_sucesso = f"✅ **| Compra realizada!** Porém, o cargo `{item['nome']}` não existe neste servidor. Contate os administradores."
+
+        await ctx.send(msg_sucesso)
+        print(f"[ECONOMIA] {ctx.author} comprou {item['nome']}")
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
