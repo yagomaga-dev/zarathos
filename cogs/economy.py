@@ -144,48 +144,6 @@ class Economy(commands.Cog):
         
         await ctx.send(embed=embed)
 
-    @commands.command(name="trabalhar", aliases=["work"])
-    async def work(self, ctx):
-        """Trabalhe para ganhar Essência."""
-        if self.collection is None: return
-
-        user_id = str(ctx.author.id)
-        user_data = self.get_user_data(user_id)
-        now = datetime.datetime.now(datetime.timezone.utc)
-
-        last_work = user_data.get("last_work")
-        if last_work:
-            if isinstance(last_work, str):
-                try:
-                    last_work = datetime.datetime.fromisoformat(last_work.replace('Z', '+00:00'))
-                except ValueError:
-                    last_work = None
-            
-            if isinstance(last_work, datetime.datetime) and last_work.tzinfo is None:
-                last_work = last_work.replace(tzinfo=datetime.timezone.utc)
-                
-            # 1 hora de cooldown
-            if isinstance(last_work, datetime.datetime) and (now - last_work).total_seconds() < 3600:
-                restante = 3600 - (now - last_work).total_seconds()
-                minutos = int(restante // 60)
-                segundos = int(restante % 60)
-                return await ctx.send(f"**[Cansaço]** Seus braços estão pesados. Descanse mais `{minutos}m {segundos}s`.")
-
-        trabalhos = [
-            "Limpou as masmorras de Zarathos",
-            "Polindo os chifres do Guardião",
-            "Organizando pergaminhos proibidos",
-            "Caçando almas perdidas nos arredores",
-            "Escoltando um novo membro pelo abismo"
-        ]
-        
-        ganho = random.randint(100, 450)
-        trabalho_feito = random.choice(trabalhos)
-        
-        self.update_balance(user_id, ganho)
-        self.collection.update_one({"_id": user_id}, {"$set": {"last_work": now}})
-
-        await ctx.send(f"| **{ctx.author.display_name}**, você {trabalho_feito} e recebeu **{ganho} ZE**!")
 
     @commands.command(name="depositar", aliases=["dep"])
     async def deposit(self, ctx, amount):
@@ -250,7 +208,6 @@ class Economy(commands.Cog):
             description=(
                 f"Aqui estão os comandos para gerenciar suas conquistas:\n\n"
                 f"• `{prefix}daily` - Coleta sua recompensa diária.\n"
-                f"• `{prefix}work` - Trabalhe para ganhar Essência.\n"
                 f"• `{prefix}money (@user)` - Veja seu saldo atual.\n"
                 f"• `{prefix}dep [valor/all]` - Guarda moedas no banco.\n"
                 f"• `{prefix}with [valor/all]` - Saca moedas do banco.\n"
