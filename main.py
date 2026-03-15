@@ -22,7 +22,9 @@ class ZarathosBot(commands.Bot):
         super().__init__(
             command_prefix=PREFIX,
             intents=intents,
-            help_command=None # Vamos criar um help personalizado depois
+            help_command=None,
+            status=discord.Status.dnd,
+            activity=discord.Game(name=f"Protegendo o servidor | {PREFIX}help")
         )
         self.start_time = datetime.datetime.now(datetime.timezone.utc)
 
@@ -64,9 +66,6 @@ class ZarathosBot(commands.Bot):
         print(f'ID do Bot: {self.user.id}')
         print(f'Prefixo: {PREFIX}')
         print("-------")
-        
-        # Define o status do bot
-        await self.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f"Protegendo o servidor | {PREFIX}help"))
 
 async def main():
     bot = ZarathosBot()
