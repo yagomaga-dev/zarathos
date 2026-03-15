@@ -5,9 +5,76 @@ import datetime
 from dotenv import load_dotenv
 import os
 import pymongo
+from discord import ui
 
 # Tentativa de carregar o .env para ambientes locais
 load_dotenv()
+
+class ShopSelect(ui.Select):
+    def __init__(self, economy_cog):
+        self.economy_cog = economy_cog
+        options = [
+            discord.SelectOption(label="VIP Surface", description="25.000 ZE | 30 dias de vantagens", value="1"),
+            discord.SelectOption(label="VIP Kraken", description="45.000 ZE | 40 dias de vantagens", value="2"),
+            discord.SelectOption(label="VIP Leviathan", description="80.000 ZE | 50 dias de vantagens", value="3"),
+        ]
+        super().__init__(placeholder="Selecione um VIP para ver detalhes...", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        vips = {
+            "1": {"nome": "Vip Surface", "preco": 25000, "duracao": "30 dias", "desc": "Cargo exclusivo, nick livre, imagens em canais restritos."},
+            "2": {"nome": "Vip Kraken", "preco": 45000, "duracao": "40 dias", "desc": "Tudo anterior + Cargo destaque, cargo personalizado, áudios/sons."},
+            "3": {"nome": "Vip Leviathan", "preco": 80000, "duracao": "50 dias", "desc": "Tudo anterior + Área VIP, mini VIP, privilégios máximos."}
+        }
+        
+        vip = vips[self.values[0]]
+        embed = discord.Embed(
+            title=f"Detalhes: {vip['nome']}",
+            description=(
+                f"**Preço:** `{vip['preco']:,} ZE`\n"
+                f"**Duração:** `{vip['duracao']}`\n\n"
+                f"**Benefícios:**\n{vip['desc']}\n\n"
+                "Para comprar, use o comando: `z.comprar " + self.values[0] + "`"
+            ),
+            color=discord.Color.dark_purple()
+        )
+        embed.set_footer(text="Confirme se possui saldo suficiente antes de comprar.")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+class ShopView(ui.View):
+    def __init__(self, economy_cog):
+        super().__init__(timeout=None)
+        self.economy_cog = economy_cog
+        self.add_item(ShopSelect(economy_cog))
+
+    @ui.button(label="Comprar Algo", style=discord.ButtonStyle.grey)
+    async def buy_something(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_message("Use o seletor abaixo para escolher o que deseja comprar!", ephemeral=True)
+
+    @ui.button(label="Converter", style=discord.ButtonStyle.grey)
+    async def convert(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.send_message(
+            "| **Sistema de Conversão**\n"
+            "No Zarathos, sua atividade é convertida automaticamente:\n"
+            "• **Mensagens:** 3.500 ZE a cada 1.000 msgs.\n"
+            "• **Voz:** 3.500 ZE por hora em call.\n"
+            "Basta ser ativo para ganhar!", ephemeral=True
+        )
+
+    @ui.button(label="Meu Saldo", style=discord.ButtonStyle.grey)
+    async def my_balance(self, interaction: discord.Interaction, button: ui.Button):
+        user_data = self.economy_cog.get_user_data(interaction.user.id)
+        if user_data:
+            wallet = user_data.get("balance", 0)
+            bank = user_data.get("bank", 0)
+            await interaction.response.send_message(
+                f"| **Seu Saldo:**\n"
+                f"Carteira: `{wallet:,} ZE`\n"
+                f"Banco: `{bank:,} ZE`\n"
+                f"Total: `{wallet + bank:,} ZE`", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message("Não consegui encontrar seus dados financeiros.", ephemeral=True)
 
 class Economy(commands.Cog):
     def __init__(self, bot):
@@ -168,75 +235,26 @@ class Economy(commands.Cog):
             color=discord.Color.from_rgb(0, 0, 0)
         )
         embed.set_footer(text="Use os comandos com sabedoria, explorador.")
-        await ctx.send(embed=embed)
-
     @commands.command(name="loja", aliases=["shop", "store"])
     async def shop(self, ctx):
-        """Exibe os itens e cargos disponíveis para compra."""
+        """Exibe os itens e cargos disponíveis para compra com interface interativa."""
         embed = discord.Embed(
-            title="Mercado das Profundezas - Deep Sea",
+            title="Mercado das Profundezas - Zarathos",
             description=(
-                "Quer se destacar no servidor com um cargo exclusivo e vantagens especiais? "
-                "Você pode se tornar VIP utilizando sua **Essência de Zarathos (ZE)**.\n\n"
-                "*Lembre-se: não realizamos reembolso e, caso saia do servidor, será necessário adquirir o VIP novamente.*\n"
-                "Use `z.comprar <ID>` para adquirir."
+                "**Vips a venda:** `3 vips`\n"
+                "**Cargos a venda:** `0 cargos`\n"
+                "**Gifts a venda:** `0 gifts`\n\n"
+                "Selecione uma opção no seletor para continuar! Você poderá visualizar os benefícios antes de confirmar a compra."
             ),
-            color=discord.Color.from_rgb(0, 0, 0),
-            timestamp=datetime.datetime.now(datetime.timezone.utc)
+            color=discord.Color.from_rgb(20, 20, 20)
         )
         
-        # VIP 1 - SURFACE
-        embed.add_field(
-            name="1 - VIP Surface",
-            value=(
-                "Preço: `25,000 ZE`\n"
-                "Duração: `30 dias`\n"
-                "**Benefícios:**\n"
-                "└ Cargo exclusivo @Vip Surface\n"
-                "└ Alterar o próprio nick\n"
-                "└ Enviar imagens em canais restritos\n"
-                "└ Emojis externos e sorteios VIP\n"
-                "*Representa aqueles que começam a explorar o oceano.*"
-            ),
-            inline=False
-        )
-
-        # VIP 2 - KRAKEN
-        embed.add_field(
-            name="2 - VIP Kraken",
-            value=(
-                "Preço: `45,000 ZE`\n"
-                "Duração: `40 dias`\n"
-                "**Benefícios:**\n"
-                "└ Tudo do nível anterior\n"
-                "└ Cargo @Vip Kraken com destaque\n"
-                "└ Criar 1 cargo personalizado\n"
-                "└ Enviar áudios e efeitos sonoros\n"
-                "└ Prioridade no atendimento\n"
-                "*Membros poderosos que dominam as profundezas.*"
-            ),
-            inline=False
-        )
-
-        # VIP 3 - LEVIATHAN
-        embed.add_field(
-            name="3 - VIP Leviathan",
-            value=(
-                "Preço: `80,000 ZE`\n"
-                "Duração: `50 dias`\n"
-                "**Benefícios:**\n"
-                "└ Tudo dos níveis anteriores\n"
-                "└ Cargo @Vip Leviathan (Máximo Destaque)\n"
-                "└ Acesso à Área VIP Exclusiva\n"
-                "└ Adicionar 2 emojis/figurinhas\n"
-                "└ Direito a 1 Mini VIP / Primeira Dama\n"
-                "└ Acesso antecipado a eventos\n"
-                "*Os membros mais lendários das profundezas.*"
-            ),
-            inline=False
-        )
+        # Thumbnail fictícia ou do bot
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+        embed.set_footer(text=f"Powered by Zarathos | Economia • Atividade • Call • Brasil • Hoje às {datetime.datetime.now().strftime('%H:%M')}")
         
-        await ctx.send(embed=embed)
+        view = ShopView(self)
+        await ctx.send(embed=embed, view=view)
 
     @commands.command(name="comprar", aliases=["buy"])
     async def buy(self, ctx, item_id: str):
