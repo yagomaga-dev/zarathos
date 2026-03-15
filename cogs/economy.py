@@ -18,7 +18,13 @@ class ShopSelect(ui.Select):
             discord.SelectOption(label="VIP Kraken", description="45.000 ZE | 40 dias de vantagens", value="2"),
             discord.SelectOption(label="VIP Leviathan", description="80.000 ZE | 50 dias de vantagens", value="3"),
         ]
-        super().__init__(placeholder="Selecione um VIP para ver detalhes...", options=options)
+        super().__init__(
+            placeholder="Selecione um VIP para ver detalhes...",
+            min_values=1,
+            max_values=1,
+            options=options,
+            row=1
+        )
 
     async def callback(self, interaction: discord.Interaction):
         vips = {
@@ -47,7 +53,7 @@ class ShopView(ui.View):
         self.economy_cog = economy_cog
         self.add_item(ShopSelect(economy_cog))
 
-    @ui.button(label="Comprar Algo", style=discord.ButtonStyle.grey)
+    @ui.button(label="Comprar", style=discord.ButtonStyle.grey)
     async def buy_something(self, interaction: discord.Interaction, button: ui.Button):
         await interaction.response.send_message("Use o seletor abaixo para escolher o que deseja comprar!", ephemeral=True)
 
@@ -315,12 +321,13 @@ class Economy(commands.Cog):
         # Ganho base: 5 ZE por mensagem
         reward = 5
         
-        # Incrementa o contador e saldo
+        # Incrementa o saldo imediatamente por mensagem
+        # (5 moedas base por mensagem para sentir o progresso)
         self.collection.update_one(
             {"_id": user_id}, 
             {
                 "$inc": {"balance": reward, "msg_count": 1},
-                "$setOnInsert": {"bank": 0, "last_daily": None, "last_work": None}
+                "$setOnInsert": {"bank": 0}
             },
             upsert=True
         )
