@@ -66,7 +66,7 @@ class ZarathosBot(commands.Bot):
         print("-------")
         
         # Define o status do bot
-        await self.change_presence(activity=discord.Game(name=f"Protegendo o servidor | {PREFIX}help"))
+        await self.change_presence(status=discord.Status.dnd, activity=discord.Game(name=f"Protegendo o servidor | {PREFIX}help"))
 
 async def main():
     bot = ZarathosBot()
