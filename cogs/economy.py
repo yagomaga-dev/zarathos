@@ -2,11 +2,14 @@ import discord
 from discord.ext import commands
 import random
 import datetime
+from dotenv import load_dotenv
 import os
 import pymongo
-from dotenv import load_dotenv
 
-load_dotenv()
+# Tenta carregar o .env do diretório raiz
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+env_path = os.path.join(base_dir, '.env')
+load_dotenv(dotenv_path=env_path)
 
 # Configuração do MongoDB
 MONGO_URL = os.getenv("MONGO_URL")
