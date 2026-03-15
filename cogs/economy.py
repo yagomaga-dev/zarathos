@@ -89,19 +89,19 @@ class Economy(commands.Cog):
 
         last_daily = user_data.get("last_daily")
         if last_daily:
-            # Garante que seja um objeto datetime ciente do fuso horário
+            # MongoDB pode retornar datetime diretamente ou string
             if isinstance(last_daily, str):
                 try:
                     last_daily = datetime.datetime.fromisoformat(last_daily.replace('Z', '+00:00'))
                 except ValueError:
-                    # Se falhar, reseta para permitir o uso
                     last_daily = None
-
-            if last_daily and last_daily.tzinfo is None:
+            
+            # Se for datetime mas sem timezone (naive), adiciona UTC
+            if isinstance(last_daily, datetime.datetime) and last_daily.tzinfo is None:
                 last_daily = last_daily.replace(tzinfo=datetime.timezone.utc)
             
             # 24 horas de cooldown
-            if last_daily and (now - last_daily).total_seconds() < 86400:
+            if isinstance(last_daily, datetime.datetime) and (now - last_daily).total_seconds() < 86400:
                 restante = 86400 - (now - last_daily).total_seconds()
                 horas = int(restante // 3600)
                 minutos = int((restante % 3600) // 60)
@@ -161,11 +161,11 @@ class Economy(commands.Cog):
                 except ValueError:
                     last_work = None
             
-            if last_work and last_work.tzinfo is None:
+            if isinstance(last_work, datetime.datetime) and last_work.tzinfo is None:
                 last_work = last_work.replace(tzinfo=datetime.timezone.utc)
                 
             # 1 hora de cooldown
-            if last_work and (now - last_work).total_seconds() < 3600:
+            if isinstance(last_work, datetime.datetime) and (now - last_work).total_seconds() < 3600:
                 restante = 3600 - (now - last_work).total_seconds()
                 minutos = int(restante // 60)
                 segundos = int(restante % 60)
