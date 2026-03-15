@@ -71,50 +71,6 @@ class Economy(commands.Cog):
         field = "balance" if mode == "wallet" else "bank"
         self.collection.update_one({"_id": user_id}, {"$inc": {field: amount}})
 
-    @commands.command(name="daily", aliases=["diario"])
-    async def daily(self, ctx):
-        """Recompensa diária de Essência."""
-        if self.collection is None:
-            self.connect_db()
-            if self.collection is None:
-                return await ctx.send(f"**[Falha no Sistema]**\nO sistema de economia está offline.\nMotivo: `{self.error_msg}`")
-
-        user_id = str(ctx.author.id)
-        user_data = self.get_user_data(user_id)
-        now = datetime.datetime.now(datetime.timezone.utc)
-
-        last_daily = user_data.get("last_daily")
-        if last_daily:
-            # MongoDB pode retornar datetime diretamente ou string
-            if isinstance(last_daily, str):
-                try:
-                    last_daily = datetime.datetime.fromisoformat(last_daily.replace('Z', '+00:00'))
-                except ValueError:
-                    last_daily = None
-            
-            # Se for datetime mas sem timezone (naive), adiciona UTC
-            if isinstance(last_daily, datetime.datetime) and last_daily.tzinfo is None:
-                last_daily = last_daily.replace(tzinfo=datetime.timezone.utc)
-            
-            # 24 horas de cooldown
-            if isinstance(last_daily, datetime.datetime) and (now - last_daily).total_seconds() < 86400:
-                restante = 86400 - (now - last_daily).total_seconds()
-                horas = int(restante // 3600)
-                minutos = int((restante % 3600) // 60)
-                return await ctx.send(f"**[Calma]** Você já coletou sua essência hoje! Volte em `{horas}h {minutos}m`.")
-
-        reward = random.randint(500, 1500)
-        self.update_balance(user_id, reward)
-        self.collection.update_one({"_id": user_id}, {"$set": {"last_daily": now}})
-
-        embed = discord.Embed(
-            title="Colheita de Essência",
-            description=f"Você colheu **{reward} ZE** das sombras de Zarathos!",
-            color=discord.Color.purple(),
-            timestamp=now
-        )
-        embed.set_footer(text=f"Saldo atual: {user_data['balance'] + reward} ZE")
-        await ctx.send(embed=embed)
 
     @commands.command(name="money", aliases=["saldo", "bal", "atm", "wallet", "carteira"])
     async def balance(self, ctx, member: discord.Member = None):
@@ -203,8 +159,7 @@ class Economy(commands.Cog):
             title="Guia de Economia - Deep Sea",
             description=(
                 f"Aqui estão os comandos para gerenciar suas conquistas:\n\n"
-                f"• `{prefix}daily` - Coleta sua recompensa diária.\n"
-                f"• `{prefix}money (@user)` - Veja seu saldo atual.\n"
+                f"• `{prefix}money` - Veja seu saldo na carteira e banco.\n"
                 f"• `{prefix}dep [valor/all]` - Guarda moedas no banco.\n"
                 f"• `{prefix}with [valor/all]` - Saca moedas do banco.\n"
                 f"• `{prefix}loja` - Abre o mercado de VIPs.\n"
