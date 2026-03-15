@@ -151,21 +151,76 @@ class Utility(commands.Cog):
 
     @commands.command(name='help')
     async def help(self, ctx):
-        """Mostra o menu interativo de ajuda."""
-        embed = discord.Embed(
+        """Mostra o menu interativo de ajuda e envia o guia detalhado na DM."""
+        # Embed para o canal público
+        embed_public = discord.Embed(
             title="Central De Comandos Zarathos",
             description=(
-                "Assistente de moderação e controle estabelecido.\n"
-                "Selecione uma das categorias no menu abaixo para acessar os comandos correspondentes."
+                "Olá! Sou o Zarathos, seu assistente de segurança e moderação.\n"
+                "Para manter o chat limpo, acabei de enviar o meu **Guia de Comandos detalhado** diretamente na sua DM! 📩\n\n"
+                "Caso sua DM esteja fechada, você ainda pode usar o menu interativo abaixo."
             ),
             color=discord.Color.from_rgb(0, 0, 0)
         )
+        embed_public.set_thumbnail(url=self.bot.user.display_avatar.url if self.bot.user.avatar else None)
         
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url if self.bot.user.avatar else None)
-        embed.set_footer(text=f"Prefixo configurado: {ctx.prefix}")
+        # Embed detalhada para a DM
+        embed_dm = discord.Embed(
+            title="📜 Guia de Operações - Zarathos",
+            description="Aqui está a lista completa e detalhada de todos os comandos disponíveis no meu sistema.",
+            color=discord.Color.from_rgb(0, 0, 0)
+        )
         
-        view = HelpView(self.bot)
-        await ctx.send(embed=embed, view=view)
+        prefix = ctx.prefix
+        
+        # Categoria Administração
+        admin_cmds = (
+            f"**{prefix}logs set [#canal]** - Define onde os registros do servidor serão enviados.\n"
+            f"**{prefix}clear [n]** - Remove uma quantidade 'n' de mensagens do canal.\n"
+            f"**{prefix}kick [@membro] [motivo]** - Expulsa um membro infrator.\n"
+            f"**{prefix}ban [@membro] [motivo]** - Bane permanentemente um membro.\n"
+            f"**{prefix}mute/unmute [@membro]** - Silencia ou retira o silêncio de um membro.\n"
+            f"**{prefix}warn/unwarn [@membro]** - Aplica ou remove avisos (Envia DM ao usuário).\n"
+            f"**{prefix}lock/unlock** - Tranca ou destranca o envio de mensagens no canal.\n"
+            f"**{prefix}nuke** - Apaga o canal atual e recria uma cópia limpa.\n"
+            f"**{prefix}slowmode [seg]** - Define um tempo de espera entre mensagens."
+        )
+        embed_dm.add_field(name="🛡️ Administração & Moderação", value=admin_cmds, inline=False)
+        
+        # Categoria Utilidades
+        util_cmds = (
+            f"**{prefix}userinfo (@membro)** - Mostra dados detalhados de um usuário.\n"
+            f"**{prefix}serverinfo** - Exibe informações técnicas do servidor.\n"
+            f"**{prefix}avatar/banner (@membro)** - Mostra a imagem de perfil ou banner.\n"
+            f"**{prefix}ping** - Verifica a latência de resposta do sistema.\n"
+            f"**{prefix}uptime** - Mostra há quanto tempo o bot está operando.\n"
+            f"**{prefix}poll [pergunta]** - Inicia uma votação rápida com reações."
+        )
+        embed_dm.add_field(name="⚙️ Utilidades Gerais", value=util_cmds, inline=False)
+        
+        # Categoria Segurança
+        sec_cmds = (
+            f"**{prefix}antispam_bypass** - Isenta um canal da proteção contra flood.\n"
+            f"**{prefix}antilink_bypass** - Permite o envio de links em canais específicos.\n"
+            f"**{prefix}lockdown** - Bloqueia a escrita em TODO o servidor (Cuidado!)."
+        )
+        embed_dm.add_field(name="🔒 Segurança Avançada", value=sec_cmds, inline=False)
+        
+        embed_dm.set_footer(text="Zarathos Security System | Sistema de Defesa Ativo")
+
+        # Tenta enviar na DM
+        try:
+            await ctx.author.send(embed=embed_dm)
+            view = HelpView(self.bot)
+            await ctx.send(embed=embed_public, view=view)
+        except discord.Forbidden:
+            # Se a DM estiver fechada, avisa e manda o menu normal
+            embed_public.description = (
+                "⚠️ **Aviso:** Não consegui enviar o guia detalhado na sua DM (ela parece estar fechada).\n"
+                "Use o menu interativo abaixo para navegar pelos comandos."
+            )
+            view = HelpView(self.bot)
+            await ctx.send(embed=embed_public, view=view)
 
     @commands.command(name='ping')
     async def ping(self, ctx):
