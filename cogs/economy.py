@@ -148,10 +148,53 @@ class Economy(commands.Cog):
                 "_id": user_id,
                 "balance": 0,
                 "bank": 0,
-                "msg_count": 0
+                "msg_count": 0,
+                "xp": 0,
+                "level": 1
             }
             self.collection.insert_one(data)
         return data
+
+    def add_xp(self, user_id, amount, guild=None, member=None):
+        """Adiciona XP ao usuário e verifica se subiu de nível."""
+        user_data = self.get_user_data(user_id)
+        if not user_data: return
+        
+        current_xp = user_data.get("xp", 0)
+        current_level = user_data.get("level", 1)
+        
+        new_xp = current_xp + amount
+        # Fórmula simples: cada nível precisa de (level * 500) de XP
+        xp_needed = current_level * 500
+        
+        if new_xp >= xp_needed:
+            new_level = current_level + 1
+            new_xp -= xp_needed
+            self.collection.update_one(
+                {"_id": str(user_id)},
+                {"$set": {"xp": new_xp, "level": new_level}}
+            )
+            return True, new_level
+        else:
+            self.collection.update_one(
+                {"_id": str(user_id)},
+                {"$set": {"xp": new_xp}}
+            )
+            return False, current_level
+
+    def get_xp_multiplier(self, member):
+        """Retorna o multiplicador de XP baseado no cargo VIP."""
+        if not member or isinstance(member, discord.User):
+            return 1.0
+            
+        roles_names = [r.name for r in member.roles]
+        if "Vip Leviathan" in roles_names:
+            return 2.0
+        elif "Vip Kraken" in roles_names:
+            return 1.5
+        elif "Vip Surface" in roles_names:
+            return 1.2
+        return 1.0
 
     def update_balance(self, user_id, amount, mode="wallet"):
         """Atualiza o saldo do usuário (carteira ou banco)."""
@@ -341,6 +384,18 @@ class Economy(commands.Cog):
 
         user_id = str(message.author.id)
         
+        # Sistema de XP por Mensagem
+        xp_gain = random.randint(15, 25)
+        multiplier = self.get_xp_multiplier(message.author)
+        total_xp = int(xp_gain * multiplier)
+        
+        leveled_up, level = self.add_xp(user_id, total_xp, message.guild, message.author)
+        if leveled_up:
+            try:
+                await message.channel.send(f"| **LEVEL UP!** {message.author.mention}, você subiu para o **Nível {level}**! Continue explorando as profundezas.")
+            except:
+                pass
+
         # Incrementa APENAS o contador de mensagens (sem dar ZE automático)
         self.collection.update_one(
             {"_id": user_id}, 
@@ -390,14 +445,53 @@ class Economy(commands.Cog):
                     total_reward = int((total_seconds / 3600) * 3500)
                     minutes = int(total_seconds // 60)
                     
+                    # XP por Voice (10 XP por minuto base)
+                    xp_voice = int((minutes * 10) * self.get_xp_multiplier(member))
+                    self.add_xp(user_id, xp_voice)
+                    
                     if total_reward > 0:
                         self.update_balance(user_id, total_reward)
                         
                         try:
                             # Mensagem sem emojis e com valor exato
-                            await member.send(f"| Atividade em Voice: Você passou `{minutes}` minutos em call e recebeu **{total_reward:,} ZE**!")
+                            await member.send(f"| Atividade em Voice: Você passou `{minutes}` minutos em call e recebeu **{total_reward:,} ZE** e **{xp_voice} XP**!")
                         except:
                             pass
+
+    @commands.command(name="rank", aliases=["level", "nivel", "xp"])
+    async def rank(self, ctx, member: discord.Member = None):
+        """Mostra o nível e XP de um explorador."""
+        member = member or ctx.author
+        if self.collection is None:
+            return await ctx.send("**[Erro]** Sistema de ranking indisponível no momento.")
+            
+        user_data = self.get_user_data(member.id)
+        level = user_data.get("level", 1)
+        xp = user_data.get("xp", 0)
+        xp_needed = level * 500
+        
+        # Barra de progresso visual simples
+        filled = int((xp / xp_needed) * 10)
+        bar = "▰" * filled + "▱" * (10 - filled)
+        
+        embed = discord.Embed(
+            title=f"Explorador: {member.display_name}",
+            color=discord.Color.blue(),
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Nível Atual", value=f"**{level}**", inline=True)
+        embed.add_field(name="Experiência (XP)", value=f"`{xp}/{xp_needed}`", inline=True)
+        embed.add_field(name="Progresso", value=f"{bar} ({int((xp/xp_needed)*100)}%)", inline=False)
+        
+        # Mostra o status VIP se tiver
+        multiplier = self.get_xp_multiplier(member)
+        if multiplier > 1.0:
+            embed.add_field(name="Bônus Ativo", value=f"💎 Multiplicador de XP: **{multiplier}x**", inline=False)
+            
+        embed.set_footer(text="Zarathos • A cada mensagem o conhecimento aumenta.")
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
