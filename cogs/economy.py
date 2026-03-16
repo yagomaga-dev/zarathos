@@ -59,13 +59,32 @@ class ShopView(ui.View):
 
     @ui.button(label="Converter", style=discord.ButtonStyle.grey)
     async def convert(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_message(
-            "| **Sistema de Conversão**\n"
-            "No Zarathos, sua atividade é convertida automaticamente:\n"
-            "• **Mensagens:** 3.500 ZE a cada 1.000 msgs.\n"
-            "• **Voz:** 3.500 ZE por hora em call.\n"
-            "Basta ser ativo para ganhar!", ephemeral=True
-        )
+        user_id = str(interaction.user.id)
+        user_data = self.economy_cog.get_user_data(user_id)
+        
+        if not user_data:
+            return await interaction.response.send_message("Não encontrei seus dados no sistema.", ephemeral=True)
+            
+        msgs = user_data.get("msg_count", 0)
+        
+        if msgs < 1:
+            return await interaction.response.send_message("Você não tem mensagens acumuladas para converter ainda. Converse mais no chat!", ephemeral=True)
+            
+        # 1000 msgs = 3500 ZE -> Taxa de 3.5 ZE por mensagem
+        reward = int(msgs * 3.5)
+        
+        if reward > 0:
+            # Adiciona o saldo e reseta o contador de mensagens
+            self.economy_cog.update_balance(user_id, reward, "wallet")
+            self.economy_cog.collection.update_one({"_id": user_id}, {"$set": {"msg_count": 0}})
+            
+            await interaction.response.send_message(
+                f"| **Conversão Concluída!**\n"
+                f"Você converteu **{msgs:,} mensagens** em **{reward:,} ZE**.\n"
+                f"Seu saldo foi atualizado!", ephemeral=True
+            )
+        else:
+            await interaction.response.send_message("Você precisa de pelo menos uma mensagem para converter.", ephemeral=True)
 
     @ui.button(label="Meu Saldo", style=discord.ButtonStyle.grey)
     async def my_balance(self, interaction: discord.Interaction, button: ui.Button):
@@ -315,21 +334,18 @@ class Economy(commands.Cog):
             return
 
         user_id = str(message.author.id)
-        # Ganho base: 5 ZE por mensagem
-        reward = 5
         
-        # Incrementa o saldo imediatamente por mensagem
-        # (5 moedas base por mensagem para sentir o progresso)
+        # Incrementa APENAS o contador de mensagens (sem dar ZE automático)
         self.collection.update_one(
             {"_id": user_id}, 
             {
-                "$inc": {"balance": reward, "msg_count": 1},
-                "$setOnInsert": {"bank": 0}
+                "$inc": {"msg_count": 1},
+                "$setOnInsert": {"balance": 0, "bank": 0}
             },
             upsert=True
         )
 
-        # Checa meta de 1.000 mensagens
+        # Bônus automático ao atingir 1.000 mensagens
         user_data = self.get_user_data(user_id)
         if user_data.get("msg_count", 0) >= 1000:
             bonus = 3500
@@ -337,7 +353,7 @@ class Economy(commands.Cog):
             self.collection.update_one({"_id": user_id}, {"$set": {"msg_count": 0}})
             
             try:
-                await message.channel.send(f"| PARABÉNS {message.author.mention}! Você atingiu **1.000 mensagens** e recebeu um bônus de **{bonus:,} ZE**!")
+                await message.channel.send(f"| **Conversão Automática!** {message.author.mention}, você atingiu **1.000 mensagens** e elas foram convertidas em **{bonus:,} ZE**!")
             except:
                 pass
 
