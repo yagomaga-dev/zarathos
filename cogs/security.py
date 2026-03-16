@@ -22,6 +22,7 @@ class Security(commands.Cog):
         self.nuke_bypassers = self.load_nuke_bypassers()
         self.nuke_track = {} # {guild_id: {user_id: [timestamps]}}
         self.channel_delete_track = {} # {guild_id: {user_id: [timestamps]}}
+        self.role_delete_track = {} # {guild_id: {user_id: [timestamps]}}
         
         # Palavras proibidas (Filtro Anti-Ofensas / Scams)
         self.blacklisted_words = ["freenitro", "free nitro", "discord.gift/", "nude", "hackear", "trava_zap"]
@@ -267,7 +268,7 @@ class Security(commands.Cog):
         user_id = user.id
         now = datetime.datetime.now()
 
-        # Rastreamento específico de deleção de canais
+        # 1. Rastreamento de deleção de CANAIS
         if entry.action == discord.AuditLogAction.channel_delete:
             if guild_id not in self.channel_delete_track:
                 self.channel_delete_track[guild_id] = {}
@@ -275,41 +276,29 @@ class Security(commands.Cog):
                 self.channel_delete_track[guild_id][user_id] = []
                 
             self.channel_delete_track[guild_id][user_id].append(now)
-            # Limpa registros antigos de canais (60 segundos para ser mais rígido)
-            self.channel_delete_track[guild_id][user_id] = [t for t in self.channel_delete_track[guild_id][user_id] if (now - t).total_seconds() < 60]
+            # Limpa registros antigos (3 minutos = 180 segundos)
+            self.channel_delete_track[guild_id][user_id] = [t for t in self.channel_delete_track[guild_id][user_id] if (now - t).total_seconds() < 180]
             
-            # Se apagar 2 ou mais canais em 60 segundos => QUARENTENA
             if len(self.channel_delete_track[guild_id][user_id]) >= 2:
-                try:
-                    # Tenta converter user_id em membro
-                    member = guild.get_member(user_id)
-                    if member:
-                        # Protocolo de Quarentena: Timeout Máximo (28 dias)
-                        duration = datetime.timedelta(days=28)
-                        await member.timeout(duration, reason="Anti-Nuke: Deleção massiva de canais (Quarentena Automática).")
-                        
-                        # Tenta remover cargos (exceto o @everyone) para tirar o poder de Admin
-                        try:
-                            await member.edit(roles=[], reason="Anti-Nuke: Removendo permissões para cessar destruição.")
-                        except:
-                            pass
-                            
-                        log_channel = discord.utils.get(guild.text_channels, name="logs")
-                        if log_channel:
-                            embed = discord.Embed(
-                                title="[Protocolo Quarentena] - ANTI-NUKE",
-                                description=f"O membro **{member.mention}** tentou apagar vários canais e foi colocado em quarentena.",
-                                color=discord.Color.red(),
-                                timestamp=datetime.datetime.now()
-                            )
-                            embed.add_field(name="Ação Tomada", value="Membro silenciado por 28 dias e cargos removidos preventivamente.", inline=False)
-                            await log_channel.send(content="@everyone", embed=embed)
-                        
-                        # Reseta o track para não repetir o alerta infinitamente
-                        self.channel_delete_track[guild_id][user_id] = []
-                        return
-                except Exception as e:
-                    print(f"[ERRO ANTI-NUKE] Falha ao aplicar quarentena: {e}")
+                await self.apply_quarantine(guild, user_id, "Deleção massiva de canais")
+                self.channel_delete_track[guild_id][user_id] = []
+                return
+
+        # 2. Rastreamento de deleção de CARGOS (Nova Proteção!)
+        if entry.action == discord.AuditLogAction.role_delete:
+            if guild_id not in self.role_delete_track:
+                self.role_delete_track[guild_id] = {}
+            if user_id not in self.role_delete_track[guild_id]:
+                self.role_delete_track[guild_id][user_id] = []
+                
+            self.role_delete_track[guild_id][user_id].append(now)
+            # Limpa registros antigos (3 minutos = 180 segundos)
+            self.role_delete_track[guild_id][user_id] = [t for t in self.role_delete_track[guild_id][user_id] if (now - t).total_seconds() < 180]
+            
+            if len(self.role_delete_track[guild_id][user_id]) >= 2:
+                await self.apply_quarantine(guild, user_id, "Deleção massiva de cargos")
+                self.role_delete_track[guild_id][user_id] = []
+                return
 
         # Rastreamento Geral (Ban para Nukes maiores)
         if guild_id not in self.nuke_track:
@@ -371,6 +360,38 @@ class Security(commands.Cog):
             color=discord.Color.from_rgb(0, 0, 0)
         )
         await ctx.send(embed=embed)
+        
+    async def apply_quarantine(self, guild, user_id, reason_info):
+        """Aplica o protocolo de quarentena a um membro suspeito."""
+        try:
+            member = guild.get_member(user_id)
+            if not member:
+                return
+
+            # 1. Timeout de 28 dias
+            duration = datetime.timedelta(days=28)
+            await member.timeout(duration, reason=f"Anti-Nuke: {reason_info} (Quarentena Automática).")
+            
+            # 2. Remoção de todos os cargos (exceto @everyone)
+            try:
+                await member.edit(roles=[], reason=f"Anti-Nuke: Removendo permissões devido a {reason_info}.")
+            except:
+                pass
+                
+            # 3. Log de segurança
+            log_channel = discord.utils.get(guild.text_channels, name="logs")
+            if log_channel:
+                embed = discord.Embed(
+                    title="[Protocolo Quarentena] - ANTI-NUKE",
+                    description=f"O membro **{member.mention}** entrou em quarentena automática.",
+                    color=discord.Color.red(),
+                    timestamp=datetime.datetime.now()
+                )
+                embed.add_field(name="Motivo", value=reason_info, inline=True)
+                embed.add_field(name="Ação", value="Timeout (28 dias) e Cargos Removidos", inline=True)
+                await log_channel.send(content="@everyone **[Urgente] Atividade Suspeita Detida**", embed=embed)
+        except Exception as e:
+            print(f"[ERRO SEGURANÇA] Falha ao aplicar quarentena: {e}")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
