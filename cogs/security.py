@@ -21,6 +21,7 @@ class Security(commands.Cog):
         # Sistema Anti-Nuke
         self.nuke_bypassers = self.load_nuke_bypassers()
         self.nuke_track = {} # {guild_id: {user_id: [timestamps]}}
+        self.channel_delete_track = {} # {guild_id: {user_id: [timestamps]}}
         
         # Palavras proibidas (Filtro Anti-Ofensas / Scams)
         self.blacklisted_words = ["freenitro", "free nitro", "discord.gift/", "nude", "hackear", "trava_zap"]
@@ -265,7 +266,52 @@ class Security(commands.Cog):
         guild_id = guild.id
         user_id = user.id
         now = datetime.datetime.now()
-        
+
+        # Rastreamento específico de deleção de canais
+        if entry.action == discord.AuditLogAction.channel_delete:
+            if guild_id not in self.channel_delete_track:
+                self.channel_delete_track[guild_id] = {}
+            if user_id not in self.channel_delete_track[guild_id]:
+                self.channel_delete_track[guild_id][user_id] = []
+                
+            self.channel_delete_track[guild_id][user_id].append(now)
+            # Limpa registros antigos de canais (60 segundos para ser mais rígido)
+            self.channel_delete_track[guild_id][user_id] = [t for t in self.channel_delete_track[guild_id][user_id] if (now - t).total_seconds() < 60]
+            
+            # Se apagar 2 ou mais canais em 60 segundos => QUARENTENA
+            if len(self.channel_delete_track[guild_id][user_id]) >= 2:
+                try:
+                    # Tenta converter user_id em membro
+                    member = guild.get_member(user_id)
+                    if member:
+                        # Protocolo de Quarentena: Timeout Máximo (28 dias)
+                        duration = datetime.timedelta(days=28)
+                        await member.timeout(duration, reason="Anti-Nuke: Deleção massiva de canais (Quarentena Automática).")
+                        
+                        # Tenta remover cargos (exceto o @everyone) para tirar o poder de Admin
+                        try:
+                            await member.edit(roles=[], reason="Anti-Nuke: Removendo permissões para cessar destruição.")
+                        except:
+                            pass
+                            
+                        log_channel = discord.utils.get(guild.text_channels, name="logs")
+                        if log_channel:
+                            embed = discord.Embed(
+                                title="[Protocolo Quarentena] - ANTI-NUKE",
+                                description=f"O membro **{member.mention}** tentou apagar vários canais e foi colocado em quarentena.",
+                                color=discord.Color.red(),
+                                timestamp=datetime.datetime.now()
+                            )
+                            embed.add_field(name="Ação Tomada", value="Membro silenciado por 28 dias e cargos removidos preventivamente.", inline=False)
+                            await log_channel.send(content="@everyone", embed=embed)
+                        
+                        # Reseta o track para não repetir o alerta infinitamente
+                        self.channel_delete_track[guild_id][user_id] = []
+                        return
+                except Exception as e:
+                    print(f"[ERRO ANTI-NUKE] Falha ao aplicar quarentena: {e}")
+
+        # Rastreamento Geral (Ban para Nukes maiores)
         if guild_id not in self.nuke_track:
             self.nuke_track[guild_id] = {}
             
@@ -277,7 +323,7 @@ class Security(commands.Cog):
         # Limpa registros antigos (mais de 15 segundos)
         self.nuke_track[guild_id][user_id] = [t for t in self.nuke_track[guild_id][user_id] if (now - t).total_seconds() < 15]
         
-        # Acima de 4 ações destrutivas em 15 segundos => NUKE detectado
+        # Acima de 4 ações destrutivas em 15 segundos => BAN
         if len(self.nuke_track[guild_id][user_id]) > 4:
             try:
                 await guild.ban(user, reason="Sistema Anti-Nuke Automático: Tentativa detectada de destruir o servidor.")
@@ -290,10 +336,9 @@ class Security(commands.Cog):
                         color=discord.Color.brand_red(),
                         timestamp=datetime.datetime.now()
                     )
-                    embed.add_field(name="Motivo do Bloqueio", value="Atividades como deletar canais, criar cargos perigosos ou banir muitas pessoas simultaneamente foram detectadas.", inline=False)
+                    embed.add_field(name="Motivo do Bloqueio", value="Múltiplas ações destrutivas em curto intervalo.", inline=False)
                     await log_channel.send(f"@everyone **[Urgente] Invasão Contida**", embed=embed)
                     
-                # Limpa a contagem para não inundar o log com várias tentativas de banir
                 self.nuke_track[guild_id][user_id] = []
             except discord.Forbidden:
                 pass
