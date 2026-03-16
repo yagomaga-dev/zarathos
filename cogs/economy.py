@@ -462,8 +462,9 @@ class Economy(commands.Cog):
     async def rank(self, ctx, member: discord.Member = None):
         """Mostra o nível e XP de um explorador."""
         member = member or ctx.author
+        member = member or ctx.author
         if self.collection is None:
-            return await ctx.send("**[Erro]** Sistema de ranking indisponível no momento.")
+            return await ctx.send(f"**[Erro]** Sistema de ranking offline. Motivo: `{self.error_msg or 'Conexão indisponível'}`")
             
         user_data = self.get_user_data(member.id)
         level = user_data.get("level", 1)
