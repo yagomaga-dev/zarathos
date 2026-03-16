@@ -148,9 +148,7 @@ class Economy(commands.Cog):
                 "_id": user_id,
                 "balance": 0,
                 "bank": 0,
-                "msg_count": 0,
-                "last_daily": None,
-                "last_work": None
+                "msg_count": 0
             }
             self.collection.insert_one(data)
         return data
@@ -167,7 +165,8 @@ class Economy(commands.Cog):
     @commands.command(name="money", aliases=["saldo", "bal", "atm", "wallet", "carteira"])
     async def balance(self, ctx, member: discord.Member = None):
         """Verifica o saldo de um membro."""
-        if self.collection is None: return
+        if self.collection is None:
+            return await ctx.send(f"**[Erro]** O sistema de economia está offline. Motivo: `{self.error_msg or 'Conexão indisponível'}`")
         
         member = member or ctx.author
         user_data = self.get_user_data(member.id)
@@ -189,10 +188,11 @@ class Economy(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(name="depositar", aliases=["dep"])
+    @commands.command(name="depositar", aliases=["dep", "deposito"])
     async def deposit(self, ctx, amount):
-        """Deposita moedas no banco para segurança."""
-        if self.collection is None: return
+        """Guarda moedas no banco para segurança."""
+        if self.collection is None:
+            return await ctx.send("**[Erro]** Sistema offline. Tente novamente em instantes.")
 
         user_data = self.get_user_data(ctx.author.id)
         wallet = user_data["balance"]
@@ -219,7 +219,8 @@ class Economy(commands.Cog):
     @commands.command(name="sacar", aliases=["withdraw", "with"])
     async def withdraw(self, ctx, amount):
         """Saca moedas do banco para a carteira."""
-        if self.collection is None: return
+        if self.collection is None:
+            return await ctx.send("**[Erro]** Sistema offline. Tente novamente em instantes.")
 
         user_data = self.get_user_data(ctx.author.id)
         bank = user_data["bank"]
@@ -260,9 +261,13 @@ class Economy(commands.Cog):
             color=discord.Color.from_rgb(0, 0, 0)
         )
         embed.set_footer(text="Use os comandos com sabedoria, explorador.")
+        await ctx.send(embed=embed)
+
     @commands.command(name="loja", aliases=["shop", "store"])
     async def shop(self, ctx):
         """Exibe os itens e cargos disponíveis para compra com interface interativa."""
+        if self.collection is None:
+            return await ctx.send("**[Erro]** A loja está fechada temporariamente por problemas técnicos.")
         embed = discord.Embed(
             title="Mercado das Profundezas - Zarathos",
             description=(
@@ -281,7 +286,8 @@ class Economy(commands.Cog):
     @commands.command(name="comprar", aliases=["buy"])
     async def buy(self, ctx, item_id: str):
         """Compra um cargo VIP da loja."""
-        if self.collection is None: return
+        if self.collection is None:
+            return await ctx.send("**[Erro]** Vendas suspensas por instabilidade no banco de dados.")
 
         # A lista precisa estar aqui dentro para o reload funcionar
         vips = {
