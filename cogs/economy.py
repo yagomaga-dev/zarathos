@@ -5,6 +5,7 @@ import random
 import datetime
 import os
 import pymongo
+import certifi
 from dotenv import load_dotenv
 from typing import Optional
 
@@ -122,7 +123,8 @@ class Economy(commands.Cog):
             return
 
         try:
-            cluster = pymongo.MongoClient(url, serverSelectionTimeoutMS=5000)
+            ca = certifi.where()
+            cluster = pymongo.MongoClient(url, serverSelectionTimeoutMS=5000, tlsCAFile=ca)
             cluster.admin.command("ping")
             db = cluster["zarathos_db"]
             self.collection = db["economy"]
