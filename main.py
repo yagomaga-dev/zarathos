@@ -10,10 +10,8 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('PREFIX', '!')
 
-# Configuração das Intents (necessário para ver membros e conteúdo de mensagens)
-intents = discord.Intents.default()
-intents.members = True
-intents.message_content = True
+# Habilitar TODAS as intents para garantir que módulos de segurança (audit log, members, etc.) funcionem sem restrições
+intents = discord.Intents.all()
 
 import datetime
 
@@ -65,7 +63,7 @@ if __name__ == "__main__":
         print("ERRO: O Token do Discord não foi configurado no arquivo .env!")
     else:
         try:
-            keep_alive() # NOVO: Inicia o servidor web ANTES de iniciar o bot
+            # keep_alive() # Usado apenas no Replit. Na Square Cloud nao e necessario.
             asyncio.run(main())
         except KeyboardInterrupt:
             pass

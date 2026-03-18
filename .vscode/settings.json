@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "C:\\Users\\Yago\\AppData\\Local\\Programs\\Python\\Python314\\Lib\\site-packages"
+    ],
+    "python.defaultInterpreterPath": "C:\\Users\\Yago\\AppData\\Local\\Programs\\Python\\Python314\\python.exe"
+}

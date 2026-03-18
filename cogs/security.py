@@ -107,36 +107,45 @@ class Security(commands.Cog):
         user_id = message.author.id
         now = datetime.datetime.now()
 
+        # Debug: Print para console para verificar se o evento está chegando
+        # print(f"[DEBUG Security] Mensagem de {message.author} em {message.channel}")
+
         if user_id not in self.message_track:
             self.message_track[user_id] = []
 
-        # Adiciona a mensagem atual (timestamp e objeto) e remove os antigos (mais de 5 segundos)
+        # Adiciona a mensagem atual e limpa antigas (mais de 5 segundos)
         self.message_track[user_id].append((now, message))
         self.message_track[user_id] = [(t, m) for t, m in self.message_track[user_id] if (now - t).total_seconds() < 5]
 
-        # Se o usuário enviou mais de 5 mensagens em 5 segundos
-        if len(self.message_track[user_id]) > 5:
-            if len(self.message_track[user_id]) == 6:
-                await message.channel.send(f"{message.author.mention}, não exeda a taxa permitida de envio de mensagens.", delete_after=5)
-                
-                # Apaga todas as mensagens que formaram o ciclo de spam de uma só vez (Bulk Delete)
-                messages_to_delete = [m for t, m in self.message_track[user_id]]
-                if messages_to_delete:
-                    try:
-                        await message.channel.delete_messages(messages_to_delete)
-                    except discord.HTTPException:
-                        # Fallback se as mensagens tiverem mais de 14 dias ou der algum erro
-                        for m in messages_to_delete:
-                            try:
-                                await m.delete()
-                            except:
-                                pass
-            else:
-                # Se continuar floodando após o 6º aviso (ainda nos 5 segs), apaga também
+        # Se o usuário enviou 5 ou mais mensagens em 5 segundos
+        if len(self.message_track[user_id]) >= 5:
+            # Notifica no console para o dono do bot ver o bloqueio
+            print(f"[ANTISPAM] Bloqueando spam de {message.author} no canal {message.channel}")
+            
+            # Se for a 5ª mensagem, envia o aviso
+            if len(self.message_track[user_id]) == 5:
                 try:
-                    await message.delete()
+                    await message.channel.send(f"**[Segurança]** {message.author.mention}, não exceda a taxa permitida de envio de mensagens.", delete_after=5)
                 except:
                     pass
+            
+            # Tenta apagar a mensagem atual
+            try:
+                await message.delete()
+            except:
+                pass
+
+            # Tenta apagar as mensagens anteriores do rastro se ainda não foram apagadas
+            if len(self.message_track[user_id]) == 5:
+                messages_to_delete = [m for t, m in self.message_track[user_id] if m.id != message.id]
+                for m in messages_to_delete:
+                    try:
+                        await m.delete()
+                    except:
+                        pass
+                
+                # Opcional: Limpa o rastro para recomeçar o ciclo após o bloqueio inicial
+                self.message_track[user_id] = []
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -241,6 +250,9 @@ class Security(commands.Cog):
         guild = entry.guild
         user = entry.user
         
+        # DEBUG: Print para ver se o evento chega no console
+        print(f"[DEBUG Nuke] Ação: {entry.action} | Autor: {user} | Alvo: {entry.target}")
+        
         # Ignora ações caso não se refira a um usuário, seja o próprio bot ou o dono do servidor
         if not user or user == self.bot.user or user.id == guild.owner_id:
             return
@@ -258,6 +270,8 @@ class Security(commands.Cog):
             discord.AuditLogAction.kick,
             discord.AuditLogAction.webhook_create,
             discord.AuditLogAction.webhook_delete,
+            discord.AuditLogAction.emoji_delete,
+            discord.AuditLogAction.sticker_delete,
             discord.AuditLogAction.guild_update
         ]
         
@@ -296,8 +310,22 @@ class Security(commands.Cog):
             self.role_delete_track[guild_id][user_id] = [t for t in self.role_delete_track[guild_id][user_id] if (now - t).total_seconds() < 180]
             
             if len(self.role_delete_track[guild_id][user_id]) >= 2:
-                await self.apply_quarantine(guild, user_id, "Deleção massiva de cargos")
+                await self.apply_quarantine(guild, user_id, "Sentinela: Deleção massiva de cargos (Possível Vingança/Nuke)")
                 self.role_delete_track[guild_id][user_id] = []
+                return
+
+        # 3. Rastreamento de deleção de DECORAÇÕES (Emojis/Stickers)
+        if entry.action in [discord.AuditLogAction.emoji_delete, discord.AuditLogAction.sticker_delete]:
+            # Usa o mesmo sistema de canais para simplificar
+            if guild_id not in self.channel_delete_track:
+                self.channel_delete_track[guild_id] = {}
+            if user_id not in self.channel_delete_track[guild_id]:
+                self.channel_delete_track[guild_id][user_id] = []
+                
+            self.channel_delete_track[guild_id][user_id].append(now)
+            if len(self.channel_delete_track[guild_id][user_id]) >= 3:
+                await self.apply_quarantine(guild, user_id, "Sentinela: Deleção de decorações do servidor (Emojis/Stickers)")
+                self.channel_delete_track[guild_id][user_id] = []
                 return
 
         # Rastreamento Geral (Ban para Nukes maiores)
